@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+   	android:layout_width="fill_parent"
+   	android:layout_height="fill_parent">
+
+	<SurfaceView android:id="@+id/cameraView" 
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent" />
+		
+	<FrameLayout android:layout_width="fill_parent" android:layout_height="fill_parent">	
+	
+		<com.dozingcatsoftware.asciicam.OverlayView android:id="@+id/overlayView" 
+			android:layout_width="fill_parent"
+			android:layout_height="fill_parent" />
+
+	</FrameLayout>
+	
+</FrameLayout>
