@@ -22,6 +22,18 @@ public class AsciiConverter {
 		public int colorAtRowColumn(int row, int col) {
 			return asciiColors[row*columns + col];
 		}
+		
+		public String getAsciiString(boolean includeNewlines) {
+			StringBuilder buffer = new StringBuilder();
+			int index = 0;
+			for(int r=0; r<rows; r++) {
+				for(int c=0; c<columns; c++) {
+					buffer.append(PIXEL_CHARS[asciiIndexes[index++]]);
+				}
+				if (includeNewlines) buffer.append("\n");
+			}
+			return buffer.toString();
+		}
 	}
 	
 	static boolean nativeCodeAvailable = false;

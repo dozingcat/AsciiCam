@@ -1,5 +1,12 @@
 package com.dozingcatsoftware.asciicam;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import com.dozingcatsoftware.util.ARManager;
 import com.dozingcatsoftware.util.CameraUtils;
 import com.dozingcatsoftware.asciicam.R;
@@ -8,6 +15,7 @@ import android.app.Activity;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
@@ -17,7 +25,9 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 	ARManager arManager;
 	AsciiConverter asciiConverter = new AsciiConverter();
 	AsciiConverter.Result asciiResult = new AsciiConverter.Result();
-	boolean useColor = false;
+	boolean useColor = true;
+	
+	Object pictureLock = new Object();
 	
     /** Called when the activity is first created. */
     @Override
@@ -62,15 +72,77 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 
     public void handleMainViewTouch(MotionEvent event) {
     	if (event.getAction()==MotionEvent.ACTION_DOWN) {
-    		useColor = !useColor;
+    		try {
+        		savePicture();
+    		}
+    		catch(IOException ex) {
+    			// TODO
+    		}
     	}
+    }
+    
+    static DateFormat FILENAME_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+    static String BASE_PICTURE_DIR = Environment.getExternalStorageDirectory() + File.separator + "AsciiCam";
+    boolean savePicture() throws IOException {
+		String datestr = FILENAME_DATE_FORMAT.format(new Date());
+		String dir = BASE_PICTURE_DIR + File.separator + datestr;
+		if (!((new File(dir)).mkdirs())) {
+			return false;
+		}
+		FileWriter output = null;
+		try {
+			output = new FileWriter(dir + File.separator + datestr + ".txt");
+			output.write(asciiResult.getAsciiString(true));
+			output.close();
+			
+			output = new FileWriter(dir + File.separator + datestr + ".html");
+			output.write("<html><head></title>Ascii Picture " + datestr + "</title></head>");
+			output.write("<body bgcolor=#000000>");
+			output.write("<pre>");
+			for(int r=0; r<asciiResult.rows; r++) {
+				int lastColor = -1;
+				// loop precondition: output is in the middle of a <span> tag.
+				// This allows skipping the tag if it's a space or the same color as previous char.
+				output.write("<span>");
+				for(int c=0; c<asciiResult.columns; c++) {
+					String asciiChar = asciiResult.stringAtRowColumn(r, c, false);
+					// don't use span tag for 
+					if (" ".equals(asciiChar)) {
+						output.write(asciiChar);
+						continue;
+					}
+					int color = asciiResult.colorAtRowColumn(r, c);
+					if (color==lastColor) {
+						output.write(asciiChar);
+						continue;
+					}
+					String htmlColor = Integer.toHexString(color & 0xffffff);
+					lastColor = color;
+					output.write(String.format("</span><span style=\"color:%s\">%s", htmlColor, asciiChar));
+				}
+				output.write("</span>\n");
+			}
+			output.write("</pre>");
+			output.write("</body></html>");
+			output.close();
+			
+		}
+		finally {
+			if (output!=null) output.close();
+		}
+    	synchronized(pictureLock) {
+    		
+    	}
+		return true;
     }
 
     @Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
 		Camera.Size size = camera.getParameters().getPreviewSize();
-		asciiConverter.computeResultForCameraData(data, size.width, size.height, 
-				overlayView.asciiRows(), overlayView.asciiColumns(), useColor, asciiResult);
+		synchronized(pictureLock) {
+			asciiConverter.computeResultForCameraData(data, size.width, size.height, 
+					overlayView.asciiRows(), overlayView.asciiColumns(), useColor, asciiResult);
+		}
 		
 		overlayView.setAsciiConverterResult(asciiResult);
 		overlayView.postInvalidate();
