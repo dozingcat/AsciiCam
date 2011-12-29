@@ -2,21 +2,32 @@ package com.dozingcatsoftware.asciicam;
 
 public class AsciiConverter {
 	
-	static String[] PIXEL_CHARS = new String[] {
+	static String[] DEFAULT_PIXEL_CHARS = new String[] {
 		" ", ".", ":", "o", "O", "8", "@",
 	};
+	
+	public static enum ColorType {
+		NONE,
+		ANSI_COLOR,
+		FULL_COLOR,
+	}
 	
 	public static class Result {
 		public int rows;
 		public int columns;
-		public boolean hasColor;
+		public ColorType colorType;
+		String[] pixelChars;
 		
 		int[] asciiIndexes;
 		int[] asciiColors;
 		
+		public boolean hasColor() {
+			return colorType!=ColorType.NONE;
+		}
+		
 		public String stringAtRowColumn(int row, int col, boolean whiteBackground) {
-			return (whiteBackground) ? PIXEL_CHARS[PIXEL_CHARS.length-1-asciiIndexes[row*columns + col]] :
-				PIXEL_CHARS[asciiIndexes[row*columns + col]];
+			return (whiteBackground) ? pixelChars[pixelChars.length-1-asciiIndexes[row*columns + col]] :
+				pixelChars[asciiIndexes[row*columns + col]];
 		}
 		
 		public int colorAtRowColumn(int row, int col) {
@@ -28,7 +39,7 @@ public class AsciiConverter {
 			int index = 0;
 			for(int r=0; r<rows; r++) {
 				for(int c=0; c<columns; c++) {
-					buffer.append(PIXEL_CHARS[asciiIndexes[index++]]);
+					buffer.append(pixelChars[asciiIndexes[index++]]);
 				}
 				if (includeNewlines) buffer.append("\n");
 			}
@@ -39,7 +50,8 @@ public class AsciiConverter {
 	static boolean nativeCodeAvailable = false;
 	
 	public native void getAsciiValuesWithColorNative(byte[] jdata, int imageWidth, int imageHeight, 
-			int asciiRows, int asciiCols, int numAsciiChars, int[] jasciiOutput, int[] jcolorOutput);
+			int asciiRows, int asciiCols, int numAsciiChars, boolean ansiColor, 
+			int[] jasciiOutput, int[] jcolorOutput);
 
 	public native void getAsciiValuesBWNative(byte[] jdata, int imageWidth, int imageHeight, 
 			int asciiRows, int asciiCols, int numAsciiChars, int[] jasciiOutput);
@@ -53,34 +65,37 @@ public class AsciiConverter {
 	}
 	
 	public Result resultForCameraData(byte[] data, int imageWidth, int imageHeight,
-			int asciiRows, int asciiCols, boolean useColor) {
+			int asciiRows, int asciiCols, String[] pixelChars, ColorType colorType) {
 		Result result = new Result();
-		computeResultForCameraData(data, imageWidth, imageHeight, asciiRows, asciiCols, useColor, result);
+		computeResultForCameraData(data, imageWidth, imageHeight, asciiRows, asciiCols, colorType, pixelChars, result);
 		return result;
 	}
 	
 	public void computeResultForCameraData(byte[] data, int imageWidth, int imageHeight,
-			int asciiRows, int asciiCols, boolean useColor, Result result) {
+			int asciiRows, int asciiCols, ColorType colorType, String[] pixelChars, Result result) {
 		result.rows = asciiRows;
 		result.columns = asciiCols;
-		result.hasColor = useColor;
+		result.colorType = colorType;
+		if (pixelChars==null) pixelChars = DEFAULT_PIXEL_CHARS;
+		result.pixelChars = pixelChars;
 		
 		if (result.asciiIndexes==null || result.asciiIndexes.length!=asciiRows*asciiCols) {
 			result.asciiIndexes = new int[asciiRows * asciiCols];
 		}
 		
-		if (useColor) {
+		if (colorType!=ColorType.NONE) {
 			if (result.asciiColors==null || result.asciiIndexes.length!=asciiRows*asciiCols) {
 				result.asciiColors = new int[asciiRows * asciiCols];
 			}
 			
 			if (nativeCodeAvailable) {
 				getAsciiValuesWithColorNative(data, imageWidth, imageHeight, asciiRows, asciiCols, 
-						PIXEL_CHARS.length, result.asciiIndexes, result.asciiColors);
+						pixelChars.length, colorType==ColorType.ANSI_COLOR, result.asciiIndexes, result.asciiColors);
 				return;
 			}
 			
 			final int MAX_COLOR_VAL = 262143; // 2**18-1
+			final int HALF_MAX_COLOR_VAL = MAX_COLOR_VAL * 7 / 8;
 			int asciiIndex = 0;
 			for(int r=0; r<asciiRows; r++) {
 				// compute grid of data pixels whose brightness to average
@@ -122,7 +137,7 @@ public class AsciiConverter {
 						}
 					}
 					int averageBright = totalBright / samples;
-					result.asciiIndexes[asciiIndex] = (averageBright * PIXEL_CHARS.length) / 255;
+					result.asciiIndexes[asciiIndex] = (averageBright * pixelChars.length) / 256;
 					int averageRed = totalRed / samples;
 					int averageGreen = totalGreen / samples;
 					int averageBlue = totalBlue / samples;
@@ -140,6 +155,12 @@ public class AsciiConverter {
 						averageGreen = Math.min((int)(averageGreen*scaleFactor), MAX_COLOR_VAL);
 						averageBlue = Math.min((int)(averageBlue*scaleFactor), MAX_COLOR_VAL);
 					}
+					// for ANSI mode, force each RGB component to be either max or 0
+					if (colorType==ColorType.ANSI_COLOR) {
+						averageRed = (averageRed >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+						averageGreen = (averageGreen >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+						averageBlue = (averageBlue >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+					}
 					result.asciiColors[asciiIndex] = (0xff000000) | ((averageRed << 6) & 0xff0000) |
 					                                ((averageGreen >> 2) & 0xff00) | ((averageBlue >> 10));
 					++asciiIndex;
@@ -150,7 +171,7 @@ public class AsciiConverter {
 		else {
 			if (nativeCodeAvailable) {
 				getAsciiValuesBWNative(data, imageWidth, imageHeight, asciiRows, asciiCols, 
-						PIXEL_CHARS.length, result.asciiIndexes);
+						pixelChars.length, result.asciiIndexes);
 				return;
 			}
 
@@ -173,7 +194,7 @@ public class AsciiConverter {
 						}
 					}
 					int averageBright = totalBright / samples;
-					result.asciiIndexes[asciiIndex++] = (averageBright * PIXEL_CHARS.length) / 255;
+					result.asciiIndexes[asciiIndex++] = (averageBright * pixelChars.length) / 256;
 				}
 			}
 		}

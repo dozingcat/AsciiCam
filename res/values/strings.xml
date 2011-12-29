@@ -3,5 +3,6 @@
 
     <string name="hello">Hello World, AsciiCamActivity!</string>
     <string name="app_name">AsciiCam</string>
+    <string name="noImagesFound">You have not saved any pictures yet.</string>
 
 </resources>

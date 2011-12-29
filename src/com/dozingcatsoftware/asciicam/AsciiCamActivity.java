@@ -1,6 +1,7 @@
 package com.dozingcatsoftware.asciicam;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -12,8 +13,11 @@ import com.dozingcatsoftware.util.CameraUtils;
 import com.dozingcatsoftware.asciicam.R;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.MotionEvent;
@@ -25,7 +29,10 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 	ARManager arManager;
 	AsciiConverter asciiConverter = new AsciiConverter();
 	AsciiConverter.Result asciiResult = new AsciiConverter.Result();
-	boolean useColor = true;
+	
+	int styleCounter = 0;
+	AsciiConverter.ColorType colorType = AsciiConverter.ColorType.NONE;
+	boolean whiteBackground = false;
 	
 	Object pictureLock = new Object();
 	
@@ -40,7 +47,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     	overlayView = (OverlayView)findViewById(R.id.overlayView);
     	
     	arManager = ARManager.createAndSetupCameraView(this, cameraView, this);
-    	arManager.setPreferredPreviewSize(400, 240);
+    	arManager.setPreferredPreviewSize(640,400);
     	arManager.setNumberOfPreviewCallbackBuffers(1);
 
     	overlayView.setOnTouchListener(new View.OnTouchListener() {
@@ -72,32 +79,61 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 
     public void handleMainViewTouch(MotionEvent event) {
     	if (event.getAction()==MotionEvent.ACTION_DOWN) {
-    		try {
-        		savePicture();
-    		}
-    		catch(IOException ex) {
-    			// TODO
-    		}
+    		styleCounter = (styleCounter+1) % 6;
+    		colorType = AsciiConverter.ColorType.values()[styleCounter % 3];
+        	whiteBackground = (styleCounter>=3);
+        	overlayView.setHasWhiteBackground(whiteBackground);
     	}
+    }
+    
+    public void takePicture(View view) {
+    	try {
+    		String datestr = FILENAME_DATE_FORMAT.format(new Date());
+    		String dir = BASE_PICTURE_DIR + File.separator + datestr;
+    		(new File(dir)).mkdirs();
+    		if (!((new File(dir)).isDirectory())) {
+    			return;
+    		}
+    		String htmlPath = saveHTML(dir, datestr);
+    		String pngPath = savePNG(dir, datestr);
+    		
+    		Uri uri = Uri.fromFile(new File(htmlPath));
+    		Intent intent = new Intent(Intent.ACTION_VIEW);
+    		intent.setData(uri);
+    		intent.setClassName("com.android.browser", "com.android.browser.BrowserActivity");
+    		startActivity(intent);
+    	}
+		catch(IOException ex) {
+			// TODO
+		}
+    }
+    
+    public void gotoGallery(View view) {
+    	Intent intent = new Intent(this, ImageGalleryActivity.class);
+    	intent.putExtra("imageDirectory", BASE_PICTURE_DIR);
+    	startActivity(intent);
     }
     
     static DateFormat FILENAME_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
     static String BASE_PICTURE_DIR = Environment.getExternalStorageDirectory() + File.separator + "AsciiCam";
-    boolean savePicture() throws IOException {
-		String datestr = FILENAME_DATE_FORMAT.format(new Date());
-		String dir = BASE_PICTURE_DIR + File.separator + datestr;
-		if (!((new File(dir)).mkdirs())) {
-			return false;
-		}
+    
+    String saveHTML(String dir, String imageName) throws IOException {
+		String outputFilePath;
 		FileWriter output = null;
 		try {
-			output = new FileWriter(dir + File.separator + datestr + ".txt");
+			output = new FileWriter(dir + File.separator + imageName + ".txt");
 			output.write(asciiResult.getAsciiString(true));
 			output.close();
 			
-			output = new FileWriter(dir + File.separator + datestr + ".html");
-			output.write("<html><head></title>Ascii Picture " + datestr + "</title></head>");
-			output.write("<body bgcolor=#000000>");
+			outputFilePath = dir + File.separator + imageName + ".html";
+			output = new FileWriter(outputFilePath);
+			output.write("<html><head></title>Ascii Picture " + imageName + "</title></head>");
+			if (whiteBackground) {
+				output.write("<body bgcolor=#ffffff>");
+			}
+			else {
+				output.write("<body bgcolor=#000000>\n");
+			}
 			output.write("<pre>");
 			for(int r=0; r<asciiResult.rows; r++) {
 				int lastColor = -1;
@@ -105,24 +141,33 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 				// This allows skipping the tag if it's a space or the same color as previous char.
 				output.write("<span>");
 				for(int c=0; c<asciiResult.columns; c++) {
-					String asciiChar = asciiResult.stringAtRowColumn(r, c, false);
-					// don't use span tag for 
+					String asciiChar = asciiResult.stringAtRowColumn(r, c, whiteBackground);
+					// don't use span tag for space
 					if (" ".equals(asciiChar)) {
 						output.write(asciiChar);
 						continue;
 					}
-					int color = asciiResult.colorAtRowColumn(r, c);
+					int color;
+					if (asciiResult.hasColor()) {
+						color = asciiResult.colorAtRowColumn(r, c);
+					}
+					else {
+						color = (whiteBackground) ? 0xff000000 : 0xffffffff;
+					}
 					if (color==lastColor) {
 						output.write(asciiChar);
 						continue;
 					}
-					String htmlColor = Integer.toHexString(color & 0xffffff);
+					String htmlColor = Integer.toHexString(color & 0x00ffffff);
+					while (htmlColor.length() < 6) {
+						htmlColor = "0" + htmlColor;
+					}
 					lastColor = color;
 					output.write(String.format("</span><span style=\"color:%s\">%s", htmlColor, asciiChar));
 				}
 				output.write("</span>\n");
 			}
-			output.write("</pre>");
+			output.write("</pre>\n");
 			output.write("</body></html>");
 			output.close();
 			
@@ -133,15 +178,32 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     	synchronized(pictureLock) {
     		
     	}
-		return true;
+		return outputFilePath;
+    }
+    
+    String savePNG(String dir, String imageName) throws IOException {
+    	Bitmap bitmap = overlayView.drawIntoNewBitmap();
+		String outputFilePath;
+		FileOutputStream output = null;
+		try {
+			outputFilePath = dir + File.separator + imageName + ".png";
+			output = new FileOutputStream(outputFilePath);
+			bitmap.compress(Bitmap.CompressFormat.PNG, 0, output);
+			output.close();
+		}
+		finally {
+			if (output!=null) output.close();
+		}
+    	return outputFilePath;
     }
 
     @Override
 	public void onPreviewFrame(byte[] data, Camera camera) {
 		Camera.Size size = camera.getParameters().getPreviewSize();
+		overlayView.setCameraPreviewSize(size.width, size.height);
 		synchronized(pictureLock) {
 			asciiConverter.computeResultForCameraData(data, size.width, size.height, 
-					overlayView.asciiRows(), overlayView.asciiColumns(), useColor, asciiResult);
+					overlayView.asciiRows(), overlayView.asciiColumns(), colorType, null, asciiResult);
 		}
 		
 		overlayView.setAsciiConverterResult(asciiResult);

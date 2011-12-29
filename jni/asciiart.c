@@ -1,7 +1,9 @@
 #include <jni.h>
 #include <stdlib.h>
 
-void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesBWNative(JNIEnv* env, jobject thiz, jbyteArray jdata, jint imageWidth, jint imageHeight, jint asciiRows, jint asciiCols, jint numAsciiChars, jintArray jasciiOutput) {
+void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesBWNative(JNIEnv* env, jobject thiz, 
+        jbyteArray jdata, jint imageWidth, jint imageHeight, 
+        jint asciiRows, jint asciiCols, jint numAsciiChars, jintArray jasciiOutput) {
 
     jbyte *data = (*env)->GetByteArrayElements(env, jdata, 0);
     jint *asciiOutput = (*env)->GetIntArrayElements(env, jasciiOutput, 0);
@@ -25,7 +27,7 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesBWNative(J
                 }
             }
             int averageBright = totalBright / samples;
-            asciiOutput[asciiIndex++] = (averageBright * numAsciiChars) / 255;
+            asciiOutput[asciiIndex++] = (averageBright * numAsciiChars) / 256;
         }
     }    
     
@@ -34,13 +36,17 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesBWNative(J
 }
 
 
-void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorNative(JNIEnv* env, jobject thiz, jbyteArray jdata, jint imageWidth, jint imageHeight, jint asciiRows, jint asciiCols, jint numAsciiChars, jintArray jasciiOutput, jintArray jcolorOutput) {
+void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorNative(JNIEnv* env, jobject thiz, 
+        jbyteArray jdata, jint imageWidth, jint imageHeight, 
+        jint asciiRows, jint asciiCols, jint numAsciiChars, jboolean ansiColor,
+        jintArray jasciiOutput, jintArray jcolorOutput) {
     
     jbyte *data = (*env)->GetByteArrayElements(env, jdata, 0);
     jint *asciiOutput = (*env)->GetIntArrayElements(env, jasciiOutput, 0);
     jint *colorOutput = (*env)->GetIntArrayElements(env, jcolorOutput, 0);
     
     static int MAX_COLOR_VAL = 262143; // 2**18-1
+    int HALF_MAX_COLOR_VAL = MAX_COLOR_VAL * 7 / 8;
     int asciiIndex = 0;
     for(int r=0; r<asciiRows; r++) {
         // compute grid of data pixels whose brightness to average
@@ -82,7 +88,7 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorN
                 }
             }
             int averageBright = totalBright / samples;
-            asciiOutput[asciiIndex] = (averageBright * numAsciiChars) / 255;
+            asciiOutput[asciiIndex] = (averageBright * numAsciiChars) / 256;
             int averageRed = totalRed / samples;
             int averageGreen = totalGreen / samples;
             int averageBlue = totalBlue / samples;
@@ -99,6 +105,12 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorN
                 averageRed = (int)(averageRed*scaleFactor); if (averageRed>MAX_COLOR_VAL) averageRed=MAX_COLOR_VAL;
                 averageGreen = (int)(averageGreen*scaleFactor); if (averageGreen>MAX_COLOR_VAL) averageGreen=MAX_COLOR_VAL;
                 averageBlue = (int)(averageBlue*scaleFactor); if (averageBlue>MAX_COLOR_VAL) averageBlue=MAX_COLOR_VAL;
+                // for ascii mode, clamp each RGB component to max or 0
+                if (ansiColor) {
+					averageRed = (averageRed >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+					averageGreen = (averageGreen >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+					averageBlue = (averageBlue >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+                }
             }
             colorOutput[asciiIndex] = (0xff000000) | ((averageRed << 6) & 0xff0000) |
             ((averageGreen >> 2) & 0xff00) | ((averageBlue >> 10));
