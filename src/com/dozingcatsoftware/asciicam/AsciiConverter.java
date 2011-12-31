@@ -1,6 +1,16 @@
 package com.dozingcatsoftware.asciicam;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+
 public class AsciiConverter {
+	
+	static final boolean DEBUG = true;
 	
 	static String[] DEFAULT_PIXEL_CHARS = new String[] {
 		" ", ".", ":", "o", "O", "8", "@",
@@ -17,6 +27,7 @@ public class AsciiConverter {
 		public int columns;
 		public ColorType colorType;
 		String[] pixelChars;
+		String debugInfo;
 		
 		int[] asciiIndexes;
 		int[] asciiColors;
@@ -45,16 +56,20 @@ public class AsciiConverter {
 			}
 			return buffer.toString();
 		}
+		
+		public String getDebugInfo() {
+			return debugInfo;
+		}
 	}
 	
 	static boolean nativeCodeAvailable = false;
 	
 	public native void getAsciiValuesWithColorNative(byte[] jdata, int imageWidth, int imageHeight, 
 			int asciiRows, int asciiCols, int numAsciiChars, boolean ansiColor, 
-			int[] jasciiOutput, int[] jcolorOutput);
+			int[] jasciiOutput, int[] jcolorOutput, int startRow, int endRow);
 
 	public native void getAsciiValuesBWNative(byte[] jdata, int imageWidth, int imageHeight, 
-			int asciiRows, int asciiCols, int numAsciiChars, int[] jasciiOutput);
+			int asciiRows, int asciiCols, int numAsciiChars, int[] jasciiOutput, int startRow, int endRow);
 
 	static {
 		try {
@@ -62,6 +77,68 @@ public class AsciiConverter {
 			nativeCodeAvailable = true;
 		}
 		catch(Throwable ignored) {}
+	}
+	
+	class Worker implements Callable {
+		// identifies which segment this worker will compute
+		int totalSegments;
+		int segmentNumber;
+		// image parameters set for every frame in setValues
+		byte[] data;
+		int imageWidth;
+		int imageHeight;
+		int asciiRows;
+		int asciiColumns;
+		String[] pixelChars;
+		ColorType colorType;
+		Result result;
+		
+		public Worker(int totalSegments, int segmentNumber) {
+			this.totalSegments = totalSegments;
+			this.segmentNumber = segmentNumber;
+		}
+		
+		public void setValues(byte[] data, int imageWidth, int imageHeight, int asciiRows, int asciiColumns, 
+				String[] pixelChars, ColorType colorType, Result result) {
+			this.data = data;
+			this.imageWidth = imageWidth;
+			this.imageHeight = imageHeight;
+			this.asciiRows = asciiRows;
+			this.asciiColumns = asciiColumns;
+			this.pixelChars = pixelChars;
+			this.colorType = colorType;
+			this.result = result;
+		}
+		
+		public Object call() {
+			// returns time in nanoseconds to execute
+			long t1 = System.nanoTime();
+			int startRow = asciiRows * segmentNumber / totalSegments;
+			int endRow = asciiRows * (segmentNumber + 1) / totalSegments;
+			computeResultForRows(data, imageWidth, imageHeight, asciiRows, asciiColumns, 
+					colorType, pixelChars, result, startRow, endRow);
+			return System.nanoTime() - t1;
+		}
+	}
+	
+	ExecutorService threadPool;
+	List threadWorkers;
+	
+	public void initThreadPool(int numThreads) {
+		destroyThreadPool();
+		if (numThreads<=0) numThreads = Runtime.getRuntime().availableProcessors();
+		threadPool = Executors.newFixedThreadPool(numThreads);
+		threadWorkers = new ArrayList();
+		for(int i=0; i<numThreads; i++) {
+			threadWorkers.add(new Worker(numThreads, i));
+		}
+	}
+	
+	public void destroyThreadPool() {
+		if (threadPool!=null) {
+			threadPool.shutdown();
+			threadPool = null;
+		}
 	}
 	
 	public Result resultForCameraData(byte[] data, int imageWidth, int imageHeight,
@@ -73,6 +150,36 @@ public class AsciiConverter {
 	
 	public void computeResultForCameraData(byte[] data, int imageWidth, int imageHeight,
 			int asciiRows, int asciiCols, ColorType colorType, String[] pixelChars, Result result) {
+		long t1 = System.nanoTime();
+		result.debugInfo = null;
+		if (threadPool==null) {
+			initThreadPool(0);
+		}
+		for(Object worker : threadWorkers) {
+			((Worker)worker).setValues(data, imageWidth, imageHeight, asciiRows, asciiCols, pixelChars, colorType, result);
+		}
+		try {
+			List threadTimes = threadPool.invokeAll(threadWorkers);
+			if (DEBUG) {
+				long t2 = System.nanoTime();
+				StringBuilder builder = new StringBuilder();
+				for(int i=0; i<threadTimes.size(); i++) {
+					try {
+						long threadNanos = (Long)((FutureTask)threadTimes.get(i)).get();
+						builder.append(String.format("Thread %d time: %d ms", i+1, threadNanos/1000000)).append("\n");
+					}
+					catch(ExecutionException ex) {}
+				}
+				builder.append(String.format("Total time: %d ms", (t2-t1) / 1000000));
+				result.debugInfo = builder.toString();
+			}
+		}
+		catch(InterruptedException ignored) {}
+	}
+	
+	private void computeResultForRows(byte[] data, int imageWidth, int imageHeight,
+			int asciiRows, int asciiCols, ColorType colorType, String[] pixelChars, Result result,
+			int startRow, int endRow) {
 		result.rows = asciiRows;
 		result.columns = asciiCols;
 		result.colorType = colorType;
@@ -90,14 +197,15 @@ public class AsciiConverter {
 			
 			if (nativeCodeAvailable) {
 				getAsciiValuesWithColorNative(data, imageWidth, imageHeight, asciiRows, asciiCols, 
-						pixelChars.length, colorType==ColorType.ANSI_COLOR, result.asciiIndexes, result.asciiColors);
+						pixelChars.length, colorType==ColorType.ANSI_COLOR, result.asciiIndexes, result.asciiColors,
+						startRow, endRow);
 				return;
 			}
 			
-			final int MAX_COLOR_VAL = 262143; // 2**18-1
+			final int MAX_COLOR_VAL = (1 << 18) - 1;
 			final int HALF_MAX_COLOR_VAL = MAX_COLOR_VAL * 7 / 8;
-			int asciiIndex = 0;
-			for(int r=0; r<asciiRows; r++) {
+			int asciiIndex = startRow * asciiCols;
+			for(int r=startRow; r<endRow; r++) {
 				// compute grid of data pixels whose brightness to average
 				int ymin = imageHeight * r / asciiRows;
 				int ymax = imageHeight * (r+1) / asciiRows;
@@ -171,12 +279,12 @@ public class AsciiConverter {
 		else {
 			if (nativeCodeAvailable) {
 				getAsciiValuesBWNative(data, imageWidth, imageHeight, asciiRows, asciiCols, 
-						pixelChars.length, result.asciiIndexes);
+						pixelChars.length, result.asciiIndexes, startRow, endRow);
 				return;
 			}
 
-			int asciiIndex = 0;
-			for(int r=0; r<asciiRows; r++) {
+			int asciiIndex = startRow * asciiCols;
+			for(int r=startRow; r<endRow; r++) {
 				// compute grid of data pixels whose brightness to average
 				int ymin = imageHeight * r / asciiRows;
 				int ymax = imageHeight * (r+1) / asciiRows;

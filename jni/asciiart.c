@@ -3,13 +3,14 @@
 
 void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesBWNative(JNIEnv* env, jobject thiz, 
         jbyteArray jdata, jint imageWidth, jint imageHeight, 
-        jint asciiRows, jint asciiCols, jint numAsciiChars, jintArray jasciiOutput) {
+        jint asciiRows, jint asciiCols, jint numAsciiChars, jintArray jasciiOutput,
+        jint startRow, jint endRow) {
 
     jbyte *data = (*env)->GetByteArrayElements(env, jdata, 0);
     jint *asciiOutput = (*env)->GetIntArrayElements(env, jasciiOutput, 0);
     
-    int asciiIndex = 0;
-    for(int r=0; r<asciiRows; r++) {
+    int asciiIndex = startRow * asciiCols;
+    for(int r=startRow; r<endRow; r++) {
         // compute grid of data pixels whose brightness to average
         int ymin = imageHeight * r / asciiRows;
         int ymax = imageHeight * (r+1) / asciiRows;
@@ -39,7 +40,7 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesBWNative(J
 void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorNative(JNIEnv* env, jobject thiz, 
         jbyteArray jdata, jint imageWidth, jint imageHeight, 
         jint asciiRows, jint asciiCols, jint numAsciiChars, jboolean ansiColor,
-        jintArray jasciiOutput, jintArray jcolorOutput) {
+        jintArray jasciiOutput, jintArray jcolorOutput, jint startRow, jint endRow) {
     
     jbyte *data = (*env)->GetByteArrayElements(env, jdata, 0);
     jint *asciiOutput = (*env)->GetIntArrayElements(env, jasciiOutput, 0);
@@ -47,8 +48,8 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorN
     
     static int MAX_COLOR_VAL = 262143; // 2**18-1
     int HALF_MAX_COLOR_VAL = MAX_COLOR_VAL * 7 / 8;
-    int asciiIndex = 0;
-    for(int r=0; r<asciiRows; r++) {
+    int asciiIndex = startRow * asciiCols;
+    for(int r=startRow; r<endRow; r++) {
         // compute grid of data pixels whose brightness to average
         int ymin = imageHeight * r / asciiRows;
         int ymax = imageHeight * (r+1) / asciiRows;

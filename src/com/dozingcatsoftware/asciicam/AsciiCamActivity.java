@@ -67,6 +67,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     public void onPause() {
     	appVisible = false;
     	arManager.stopCamera();
+    	asciiConverter.destroyThreadPool();
     	super.onPause();
     }
     
