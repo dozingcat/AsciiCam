@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="hello">Hello World, AsciiCamActivity!</string>
     <string name="app_name">AsciiCam</string>
+    <string name="aboutText">Placeholder for copyright and instructions.</string>
+
     <string name="noImagesFound">You have not saved any pictures yet.</string>
+
+	<string name="deleteImageButtonLabel">Delete Picture</string>
+	<string name="shareImageButtonLabel">Share Picture</string>
+	<string name="shareHtmlButtonLabel">Share HTML</string>
+	<string name="exitViewImageButtonLabel">Return</string>
 
 </resources>

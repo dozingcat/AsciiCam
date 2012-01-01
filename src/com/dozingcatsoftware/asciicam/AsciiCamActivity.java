@@ -98,21 +98,20 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     		String htmlPath = saveHTML(dir, datestr);
     		String pngPath = savePNG(dir, datestr);
     		
-    		Uri uri = Uri.fromFile(new File(htmlPath));
-    		Intent intent = new Intent(Intent.ACTION_VIEW);
-    		intent.setData(uri);
-    		intent.setClassName("com.android.browser", "com.android.browser.BrowserActivity");
-    		startActivity(intent);
+    		ViewImageActivity.startActivityWithImageURI(this, Uri.fromFile(new File(pngPath)), "image/png");
     	}
 		catch(IOException ex) {
 			// TODO
 		}
     }
     
-    public void gotoGallery(View view) {
-    	Intent intent = new Intent(this, ImageGalleryActivity.class);
-    	intent.putExtra("imageDirectory", BASE_PICTURE_DIR);
+    public void onClick_gotoGallery(View view) {
+    	Intent intent = LibraryActivity.intentWithImageDirectory(this, BASE_PICTURE_DIR);
     	startActivity(intent);
+    }
+    
+    public void onClick_gotoAbout(View view) {
+    	AboutActivity.startIntent(this);
     }
     
     static DateFormat FILENAME_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");

@@ -20,7 +20,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ImageGalleryActivity"></activity>
+        <activity android:name="LibraryActivity"></activity>
+        <activity android:name="ViewImageActivity" android:screenOrientation="landscape"></activity>
+        <activity android:name="AboutActivity"></activity>
     </application>
 
 </manifest>

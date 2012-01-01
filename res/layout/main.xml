@@ -36,7 +36,11 @@
 
 					<Button android:id="@+id/galleryButton" android:text="Gallery"
 						android:layout_width="wrap_content" android:layout_height="wrap_content" 
-						android:onClick="gotoGallery"/>
+						android:onClick="onClick_gotoGallery"/>
+
+					<Button android:id="@+id/galleryButton" android:text="About"
+						android:layout_width="wrap_content" android:layout_height="wrap_content" 
+						android:onClick="onClick_gotoAbout"/>
 
 				</LinearLayout>
 				
