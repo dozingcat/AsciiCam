@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+	<PreferenceCategory android:title="Preferences">
+		<EditTextPreference android:key="@string/pixelCharsPrefId" android:enabled="true" 
+		    android:title="@string/pixelCharsPrefTitle" android:summary="@string/pixelCharsPrefSummary" />
+	</PreferenceCategory>
+</PreferenceScreen>

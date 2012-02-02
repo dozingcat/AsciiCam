@@ -23,6 +23,7 @@
         <activity android:name="LibraryActivity"></activity>
         <activity android:name="ViewImageActivity" android:screenOrientation="landscape"></activity>
         <activity android:name="AboutActivity"></activity>
+        <activity android:name="AsciiCamPreferences"></activity>
     </application>
 
 </manifest>

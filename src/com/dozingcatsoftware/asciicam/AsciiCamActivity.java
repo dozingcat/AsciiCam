@@ -14,12 +14,14 @@ import com.dozingcatsoftware.asciicam.R;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
@@ -33,8 +35,10 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 	int styleCounter = 0;
 	AsciiConverter.ColorType colorType = AsciiConverter.ColorType.NONE;
 	boolean whiteBackground = false;
+	String pixelChars;
 	
 	Object pictureLock = new Object();
+	final static int ACTIVITY_PREFERENCES = 1;
 	
     /** Called when the activity is first created. */
     @Override
@@ -56,6 +60,8 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 				return true;
 			}
     	});
+    	
+    	updateFromPreferences();
     }
     
     SurfaceView cameraView;
@@ -80,14 +86,30 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 
     public void handleMainViewTouch(MotionEvent event) {
     	if (event.getAction()==MotionEvent.ACTION_DOWN) {
-    		styleCounter = (styleCounter+1) % 6;
-    		colorType = AsciiConverter.ColorType.values()[styleCounter % 3];
-        	whiteBackground = (styleCounter>=3);
-        	overlayView.setHasWhiteBackground(whiteBackground);
+    		styleCounter = (styleCounter+1) % 2;
+    		colorType = AsciiConverter.ColorType.values()[styleCounter % 2];
+        	//whiteBackground = (styleCounter>=2);
+        	//overlayView.setHasWhiteBackground(whiteBackground);
     	}
     }
     
-    public void takePicture(View view) {
+    void updateFromPreferences() {
+    	SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+    	pixelChars = prefs.getString(getString(R.string.pixelCharsPrefId), null);
+    }
+    
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) { 
+        super.onActivityResult(requestCode, resultCode, intent); 
+
+        switch(requestCode) { 
+            case ACTIVITY_PREFERENCES:
+            	updateFromPreferences();
+            	break;
+        }
+    }
+
+    public void onClick_takePicture(View view) {
     	try {
     		String datestr = FILENAME_DATE_FORMAT.format(new Date());
     		String dir = BASE_PICTURE_DIR + File.separator + datestr;
@@ -112,6 +134,10 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     
     public void onClick_gotoAbout(View view) {
     	AboutActivity.startIntent(this);
+    }
+    
+    public void onClick_gotoPreferences(View view) {
+    	AsciiCamPreferences.startIntent(this, ACTIVITY_PREFERENCES);
     }
     
     static DateFormat FILENAME_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
@@ -175,9 +201,6 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 		finally {
 			if (output!=null) output.close();
 		}
-    	synchronized(pictureLock) {
-    		
-    	}
 		return outputFilePath;
     }
     
@@ -203,7 +226,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 		overlayView.setCameraPreviewSize(size.width, size.height);
 		synchronized(pictureLock) {
 			asciiConverter.computeResultForCameraData(data, size.width, size.height, 
-					overlayView.asciiRows(), overlayView.asciiColumns(), colorType, null, asciiResult);
+					overlayView.asciiRows(), overlayView.asciiColumns(), colorType, pixelChars, asciiResult);
 		}
 		
 		overlayView.setAsciiConverterResult(asciiResult);

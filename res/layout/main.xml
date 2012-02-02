@@ -11,39 +11,65 @@
 	
 		<com.dozingcatsoftware.asciicam.OverlayView android:id="@+id/overlayView" 
 			android:layout_width="fill_parent"
-			android:layout_height="fill_parent" />
+			android:layout_height="fill_parent" /><TextView
+            android:id="@+id/statusText"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top|center" />
 
+		<RelativeLayout
+		    android:layout_width="fill_parent"
+		    android:layout_height="fill_parent"
+		    android:orientation="vertical" >
+
+		    <LinearLayout
+                android:id="@+id/verticalButtonBar"
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:orientation="vertical"
+                android:paddingTop="5dp"
+                android:visibility="visible" >
+
+                <ImageButton
+                    android:id="@+id/cameraActionButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="#00000000"
+                    android:onClick="onClick_takePicture"
+                    android:src="@drawable/camera_save" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent"
+                android:gravity="bottom|center"
+                android:orientation="horizontal"
+                android:paddingTop="5dp"
+                android:visibility="visible" >
+
+                <Button
+                    android:id="@+id/aboutButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="onClick_gotoAbout"
+                    android:text="@string/aboutButtonLabel" />
+
+                <Button
+                    android:id="@+id/galleryButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="onClick_gotoGallery"
+                    android:text="@string/galleryButtonLabel" />
+
+                <Button
+                    android:id="@+id/preferencesButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:onClick="onClick_gotoPreferences"
+                    android:text="@string/preferencesButtonLabel" />
+            </LinearLayout>
+		</RelativeLayout>
+        
 	</FrameLayout>
 
-		<LinearLayout android:layout_width="fill_parent" android:layout_height="fill_parent"
-			android:orientation="vertical">
-		
-			<FrameLayout android:layout_width="fill_parent" android:layout_height="wrap_content">
-			
-				<TextView android:layout_width="fill_parent" android:layout_height="wrap_content"
-					android:id="@+id/statusText"
-					android:text=""
-					android:gravity="top|center"
-					android:layout_weight="1"
-				/>
-				
-				<LinearLayout android:orientation="vertical" android:id="@+id/verticalButtonBar" android:visibility="visible"
-				  android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingTop="5dp">
-
-					<ImageButton android:id="@+id/cameraActionButton" android:src="@drawable/camera_save" android:background="#00000000"
-						android:layout_width="wrap_content" android:layout_height="wrap_content" 
-						android:onClick="takePicture"/>
-
-					<Button android:id="@+id/galleryButton" android:text="Gallery"
-						android:layout_width="wrap_content" android:layout_height="wrap_content" 
-						android:onClick="onClick_gotoGallery"/>
-
-					<Button android:id="@+id/galleryButton" android:text="About"
-						android:layout_width="wrap_content" android:layout_height="wrap_content" 
-						android:onClick="onClick_gotoAbout"/>
-
-				</LinearLayout>
-				
-			</FrameLayout>
-	    </LinearLayout>	    	
 </FrameLayout>

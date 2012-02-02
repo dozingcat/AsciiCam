@@ -10,5 +10,13 @@
 	<string name="shareImageButtonLabel">Share Picture</string>
 	<string name="shareHtmlButtonLabel">Share HTML</string>
 	<string name="exitViewImageButtonLabel">Return</string>
+	
+	<string name="galleryButtonLabel">Gallery</string>
+	<string name="aboutButtonLabel">About</string>
+	<string name="preferencesButtonLabel">Preferences</string>
+	
+	<string name="pixelCharsPrefId">pixelChars</string>
+	<string name="pixelCharsPrefTitle">Pixel Characters</string>
+	<string name="pixelCharsPrefSummary">Enter characters to use in images, or leave blank for default</string>
 
 </resources>

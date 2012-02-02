@@ -141,22 +141,31 @@ public class AsciiConverter {
 		}
 	}
 	
+	private static String[] toPixelCharArray(String str) {
+		if (str==null || str.length()==0) return null;
+		String[] charArray = new String[str.length()];
+		for(int i=0; i<str.length(); i++) {
+			charArray[i] = str.substring(i, i+1);
+		}
+		return charArray;
+	}
+	
 	public Result resultForCameraData(byte[] data, int imageWidth, int imageHeight,
-			int asciiRows, int asciiCols, String[] pixelChars, ColorType colorType) {
+			int asciiRows, int asciiCols, String pixelCharString, ColorType colorType) {
 		Result result = new Result();
-		computeResultForCameraData(data, imageWidth, imageHeight, asciiRows, asciiCols, colorType, pixelChars, result);
+		computeResultForCameraData(data, imageWidth, imageHeight, asciiRows, asciiCols, colorType, pixelCharString, result);
 		return result;
 	}
 	
 	public void computeResultForCameraData(byte[] data, int imageWidth, int imageHeight,
-			int asciiRows, int asciiCols, ColorType colorType, String[] pixelChars, Result result) {
+			int asciiRows, int asciiCols, ColorType colorType, String pixelCharString, Result result) {
 		long t1 = System.nanoTime();
 		result.debugInfo = null;
 		if (threadPool==null) {
 			initThreadPool(0);
 		}
 		for(Object worker : threadWorkers) {
-			((Worker)worker).setValues(data, imageWidth, imageHeight, asciiRows, asciiCols, pixelChars, colorType, result);
+			((Worker)worker).setValues(data, imageWidth, imageHeight, asciiRows, asciiCols, toPixelCharArray(pixelCharString), colorType, result);
 		}
 		try {
 			List threadTimes = threadPool.invokeAll(threadWorkers);
