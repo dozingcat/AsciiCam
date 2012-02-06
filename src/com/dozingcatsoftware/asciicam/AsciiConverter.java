@@ -45,6 +45,10 @@ public class AsciiConverter {
 			return asciiColors[row*columns + col];
 		}
 		
+		public float ratioAtRowColumn(int row, int col) {
+			return 1.0f*asciiIndexes[row*columns + col] / pixelChars.length;
+		}
+		
 		public String getAsciiString(boolean includeNewlines) {
 			StringBuilder buffer = new StringBuilder();
 			int index = 0;

@@ -22,6 +22,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
@@ -60,6 +61,8 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 				return true;
 			}
     	});
+    	
+    	this.findViewById(R.id.switchCameraButton).setVisibility(CameraUtils.numberOfCameras() > 1 ? View.VISIBLE : View.GONE);
     	
     	updateFromPreferences();
     }
@@ -119,11 +122,12 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     		}
     		String htmlPath = saveHTML(dir, datestr);
     		String pngPath = savePNG(dir, datestr);
+    		String thumbnailPath = saveThumbnail(BASE_PICTURE_DIR + File.separator + "thumbnails", datestr);
     		
     		ViewImageActivity.startActivityWithImageURI(this, Uri.fromFile(new File(pngPath)), "image/png");
     	}
 		catch(IOException ex) {
-			// TODO
+			Log.e("AsciiCam", "Error saving picture", ex);
 		}
     }
     
@@ -138,6 +142,10 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     
     public void onClick_gotoPreferences(View view) {
     	AsciiCamPreferences.startIntent(this, ACTIVITY_PREFERENCES);
+    }
+    
+    public void onClick_switchCamera(View view) {
+    	arManager.switchToNextCamera();
     }
     
     static DateFormat FILENAME_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
@@ -206,6 +214,15 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     
     String savePNG(String dir, String imageName) throws IOException {
     	Bitmap bitmap = overlayView.drawIntoNewBitmap();
+    	return saveBitmap(bitmap, dir, imageName);
+    }
+    
+    String saveThumbnail(String dir, String imageName) throws IOException {
+    	Bitmap bitmap = overlayView.drawIntoThumbnailBitmap();
+    	return saveBitmap(bitmap, dir, imageName);
+    }
+    
+    String saveBitmap(Bitmap bitmap, String dir, String imageName) throws IOException {
 		String outputFilePath;
 		FileOutputStream output = null;
 		try {

@@ -109,4 +109,45 @@ public class OverlayView extends View {
 		this.drawAscii(c, this.imageWidth, this.imageHeight, 0, 0);
 		return bitmap;
 	}
+	
+	// For thumbnails, create image one-fourth normal size, use every other row and column, and draw solid rectangles
+	// instead of text because text won't scale down well for gallery view.
+	public Bitmap drawIntoThumbnailBitmap() {
+		int width = this.imageWidth / 4;
+		int height = this.imageHeight / 4;
+		Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+		Canvas canvas = new Canvas(bitmap);
+		Paint paint = new Paint();
+		paint.setStyle(Paint.Style.FILL);
+		paint.setARGB(255, 255, 255, 255);
+
+		canvas.drawARGB(255, 0, 0, 0);
+		int rows = asciiRows();
+		int cols = asciiColumns();
+		if (asciiResult!=null && asciiResult.rows==rows && asciiResult.columns==cols) {
+			for(int r=0; r<asciiResult.rows; r+=2) {
+				int ymin = (int)(height*r / asciiResult.rows);
+				int ymax = (int)(height*(r+2) / asciiResult.rows);
+				for(int c=0; c<asciiResult.columns; c+=2) {
+					int xmin = (int)(width*c / asciiResult.columns);
+					int xmax = (int)(width*(c+2) / asciiResult.columns);
+					float ratio = asciiResult.ratioAtRowColumn(r, c);
+					if (ratio > 0) {
+						if (asciiResult.hasColor()) {
+							paint.setColor(asciiResult.colorAtRowColumn(r, c));
+						}
+						if (ratio > 0.5) {
+							canvas.drawRect(xmin, ymin, xmax, ymax, paint);
+						}
+						else {
+							int x = (xmin + xmax) / 2 - 1;
+							int y = (ymin + ymax) / 2 - 1;
+							canvas.drawRect(x, y, x+2, y+2, paint);
+						}
+					}
+				}
+			}
+		}
+		return bitmap;
+	}
 }
