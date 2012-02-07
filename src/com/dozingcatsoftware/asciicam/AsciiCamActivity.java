@@ -250,6 +250,5 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 		overlayView.postInvalidate();
 		
     	CameraUtils.addPreviewCallbackBuffer(camera, data);
-		
 	}
 }
