@@ -1,3 +1,5 @@
+// Copyright (C) 2012 Brian Nenninger
+
 package com.dozingcatsoftware.util;
 
 import android.app.Activity;
@@ -5,6 +7,11 @@ import android.hardware.Camera;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+/**
+ * This class handles initializing, starting, and stopping the camera. An Activity using this class must provide the 
+ * SurfaceView that the camera preview will draw into, and a Camera.PreviewCallback to process the data for each 
+ * preview frame. It also needs to call startCamera() and stopCamera() when needed, such as in onResume and onPause.
+ */
 public class ARManager implements SurfaceHolder.Callback {
     
     Activity activity;

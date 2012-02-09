@@ -1,3 +1,5 @@
+// Copyright (C) 2012 Brian Nenninger
+
 package com.dozingcatsoftware.asciicam;
 
 import com.dozingcatsoftware.asciicam.R;
