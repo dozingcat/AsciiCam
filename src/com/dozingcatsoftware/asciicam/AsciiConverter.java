@@ -21,7 +21,7 @@ public class AsciiConverter {
     public static enum ColorType {
         NONE,
         ANSI_COLOR,
-        FULL_COLOR,
+        //FULL_COLOR,
     }
     
     public static class Result {

@@ -35,8 +35,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     AsciiConverter asciiConverter = new AsciiConverter();
     AsciiConverter.Result asciiResult = new AsciiConverter.Result();
     
-    int styleCounter = 0;
-    AsciiConverter.ColorType colorType = AsciiConverter.ColorType.NONE;
+    AsciiConverter.ColorType colorType = AsciiConverter.ColorType.ANSI_COLOR;
     String pixelChars;
     
     Object pictureLock = new Object();
@@ -90,14 +89,32 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
 
     public void handleMainViewTouch(MotionEvent event) {
         if (event.getAction()==MotionEvent.ACTION_DOWN) {
-            styleCounter = (styleCounter+1) % 2;
-            colorType = AsciiConverter.ColorType.values()[styleCounter % 2];
+        	AsciiConverter.ColorType[] colorTypeValues = AsciiConverter.ColorType.values();
+        	this.colorType = colorTypeValues[(this.colorType.ordinal() + 1) % colorTypeValues.length];
+            saveColorStyleToPreferences();
         }
     }
     
     void updateFromPreferences() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         pixelChars = prefs.getString(getString(R.string.pixelCharsPrefId), null);
+        
+        String colorTypeName = prefs.getString("colorType", null);
+        if (colorTypeName!=null) {
+        	try {
+        		this.colorType = AsciiConverter.ColorType.valueOf(colorTypeName);;
+        	}
+        	catch(Exception ignored) {}
+        }
+        if (colorType==null) {
+        	colorType = AsciiConverter.ColorType.ANSI_COLOR;
+        }
+    }
+    
+    void saveColorStyleToPreferences() {
+    	SharedPreferences.Editor editor = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).edit();
+    	editor.putString("colorType", colorType.name());
+    	editor.commit();
     }
     
     @Override
