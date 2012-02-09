@@ -1,86 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-   	android:layout_width="fill_parent"
-   	android:layout_height="fill_parent">
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
 
-	<SurfaceView android:id="@+id/cameraView" 
-		android:layout_width="fill_parent"
-		android:layout_height="fill_parent" />
-		
-	<FrameLayout android:layout_width="fill_parent" android:layout_height="fill_parent">	
-	
-		<com.dozingcatsoftware.asciicam.OverlayView android:id="@+id/overlayView" 
-			android:layout_width="fill_parent"
-			android:layout_height="fill_parent" /><TextView
+    <SurfaceView
+        android:id="@+id/cameraView"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
+    <FrameLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" >
+
+        <com.dozingcatsoftware.asciicam.OverlayView
+            android:id="@+id/overlayView"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" />
+
+        <TextView
             android:id="@+id/statusText"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:gravity="top|center" />
 
-		<RelativeLayout
-		    android:layout_width="fill_parent"
-		    android:layout_height="fill_parent"
-		    android:orientation="vertical" >
+        <LinearLayout
+            android:id="@+id/verticalButtonBar"
+            android:layout_width="wrap_content"
+            android:layout_height="fill_parent"
+            android:orientation="vertical"
+            android:paddingTop="5dp"
+            android:visibility="visible" >
 
-		    <LinearLayout
-                android:id="@+id/verticalButtonBar"
+            <ImageButton
+                android:id="@+id/cameraActionButton"
                 android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#00000000"
+                android:onClick="onClick_takePicture"
+                android:src="@drawable/camera_save" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="10dp" />
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="#00000000"
+                android:onClick="onClick_gotoPreferences"
+                android:src="@android:drawable/ic_menu_preferences" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="10dp" />
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="#00000000"
+                android:onClick="onClick_gotoGallery"
+                android:src="@android:drawable/ic_menu_gallery" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="10dp" />
+
+            <ImageButton
+                android:id="@+id/switchCameraButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="#00000000"
+                android:onClick="onClick_switchCamera"
+                android:src="@drawable/switch_camera" />
+
+            <LinearLayout
+                android:id="@+id/verticalButtonBar"
+                android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
+                android:gravity="bottom"
                 android:orientation="vertical"
-                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
                 android:visibility="visible" >
 
                 <ImageButton
-                    android:id="@+id/cameraActionButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:background="#00000000"
-                    android:onClick="onClick_takePicture"
-                    android:src="@drawable/camera_save" />
-                
-                <View android:layout_height="10dp" android:layout_width="0dp" />
-
-                <ImageButton
-                    android:id="@+id/switchCameraButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:background="#00000000"
-                    android:onClick="onClick_switchCamera"
-                    android:src="@drawable/switch_camera" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
-                android:gravity="bottom|center"
-                android:orientation="horizontal"
-                android:paddingTop="5dp"
-                android:visibility="visible" >
-
-                <Button
-                    android:id="@+id/aboutButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
                     android:onClick="onClick_gotoAbout"
-                    android:text="@string/aboutButtonLabel" />
-
-                <Button
-                    android:id="@+id/galleryButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:onClick="onClick_gotoGallery"
-                    android:text="@string/galleryButtonLabel" />
-
-                <Button
-                    android:id="@+id/preferencesButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:onClick="onClick_gotoPreferences"
-                    android:text="@string/preferencesButtonLabel" />
+                    android:src="@android:drawable/ic_menu_help" />
             </LinearLayout>
-		</RelativeLayout>
-        
-	</FrameLayout>
+        </LinearLayout>
+    </FrameLayout>
 
 </FrameLayout>
