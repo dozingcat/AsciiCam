@@ -127,6 +127,10 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
                 break;
         }
     }
+    
+    static String thumbnailDirectory() {
+    	return BASE_PICTURE_DIR + File.separator + "thumbnails";
+    }
 
     public void onClick_takePicture(View view) {
         try {
@@ -138,7 +142,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
             }
             String htmlPath = saveHTML(dir, datestr);
             String pngPath = savePNG(dir, datestr);
-            String thumbnailPath = saveThumbnail(BASE_PICTURE_DIR + File.separator + "thumbnails", datestr);
+            String thumbnailPath = saveThumbnail(thumbnailDirectory(), datestr);
             
             ViewImageActivity.startActivityWithImageURI(this, Uri.fromFile(new File(pngPath)), "image/png");
         }
@@ -148,7 +152,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     }
     
     public void onClick_gotoGallery(View view) {
-        Intent intent = LibraryActivity.intentWithImageDirectory(this, BASE_PICTURE_DIR);
+        Intent intent = LibraryActivity.intentWithImageDirectory(this, BASE_PICTURE_DIR, thumbnailDirectory());
         startActivity(intent);
     }
     
@@ -178,7 +182,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
             outputFilePath = dir + File.separator + imageName + ".html";
             output = new FileWriter(outputFilePath);
             output.write("<html><head></title>Ascii Picture " + imageName + "</title></head>");
-            output.write("<body bgcolor=#000000>\n");
+            output.write("<body><div style=\"background: black; letter-spacing: 3px;\">\n");
 
             output.write("<pre>");
             for(int r=0; r<asciiResult.rows; r++) {
@@ -214,7 +218,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
                 output.write("</span>\n");
             }
             output.write("</pre>\n");
-            output.write("</body></html>");
+            output.write("</div></body></html>");
             output.close();
             
         }

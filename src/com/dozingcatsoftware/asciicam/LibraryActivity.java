@@ -41,9 +41,10 @@ public class LibraryActivity extends Activity {
     // A cache of scaled Bitmaps for the image files, so we can avoid reloading them as the user scrolls.
     ScaledBitmapCache bitmapCache;
     
-    public static Intent intentWithImageDirectory(Context parent, String imageDirectory) {
+    public static Intent intentWithImageDirectory(Context parent, String imageDirectory, String thumbnailDirectory) {
         Intent intent = new Intent(parent, LibraryActivity.class);
         intent.putExtra("imageDirectory", imageDirectory);
+        intent.putExtra("thumbnailDirectory", thumbnailDirectory);
         return intent;
     }
 
@@ -53,7 +54,7 @@ public class LibraryActivity extends Activity {
         setContentView(R.layout.library_list);
         
         imageDirectory = getIntent().getStringExtra("imageDirectory");
-        bitmapCache = new ScaledBitmapCache(this, imageDirectory + File.separator + "thumbnails");
+        bitmapCache = new ScaledBitmapCache(this, getIntent().getStringExtra("thumbnailDirectory"));
         
         gridView = (GridView) findViewById(R.id.gridview);
         gridView.setOnItemClickListener(new OnItemClickListener() {

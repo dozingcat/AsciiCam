@@ -2,8 +2,7 @@
 <resources>
 
     <string name="app_name">AsciiCam</string>
-    <string name="aboutText">Placeholder for copyright and instructions.</string>
-
+    <string name="aboutText">AsciiCam 1.0\n© 2012 Brian Nenninger\nMore info: www.dozingcatsoftware.com/AsciiCam\n\nComments and bug reports: bnenning@gmail.com\n\nSource Code: https://github.com/dozingcat/AsciiCam\n\nTouch the screen to switch between color and black and white modes. To take a picture, touch the shutter icon in the upper left. The smaller icons under the shutter in order are:\n- Settings: Allows you to change the characters used to display the image.\n- Gallery: Shows a list of all the pictures you\'ve taken. Touch an image to view it full screen, where you will have the option to delete it, or share it as an image or as HTML.\n- Switch Camera: Switches between rear and front facing cameras. This is only available on Android 2.3 (Gingerbread) or later.</string>
     <string name="noImagesFound">You have not saved any pictures yet.</string>
 
 	<string name="deleteImageButtonLabel">Delete Picture</string>
@@ -17,6 +16,6 @@
 	
 	<string name="pixelCharsPrefId">pixelChars</string>
 	<string name="pixelCharsPrefTitle">Pixel Characters</string>
-	<string name="pixelCharsPrefSummary">Enter characters to use in images, or leave blank for default</string>
+	<string name="pixelCharsPrefSummary">Enter characters to use in images from darkest to brightest, or leave blank for default of .:oO8@</string>
 
 </resources>
