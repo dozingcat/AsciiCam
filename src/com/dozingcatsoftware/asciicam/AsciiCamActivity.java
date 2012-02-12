@@ -9,9 +9,13 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.EnumMap;
+import java.util.Map;
 
 import com.dozingcatsoftware.util.ARManager;
+import com.dozingcatsoftware.util.AndroidUtils;
 import com.dozingcatsoftware.util.CameraUtils;
+import com.dozingcatsoftware.util.ShutterButton;
 import com.dozingcatsoftware.asciicam.R;
 
 import android.app.Activity;
@@ -29,17 +33,21 @@ import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
+import android.widget.ImageButton;
 
-public class AsciiCamActivity extends Activity implements PreviewCallback {
+public class AsciiCamActivity extends Activity implements PreviewCallback, ShutterButton.OnShutterButtonListener {
     ARManager arManager;
     AsciiConverter asciiConverter = new AsciiConverter();
     AsciiConverter.Result asciiResult = new AsciiConverter.Result();
     
     AsciiConverter.ColorType colorType = AsciiConverter.ColorType.ANSI_COLOR;
-    String pixelChars;
+    Map<AsciiConverter.ColorType, String> pixelCharsMap = new EnumMap<AsciiConverter.ColorType, String>(AsciiConverter.ColorType.class);
     
     Object pictureLock = new Object();
     final static int ACTIVITY_PREFERENCES = 1;
+    
+    ImageButton cycleColorButton;
+    ShutterButton shutterButton;
     
     /** Called when the activity is first created. */
     @Override
@@ -50,21 +58,17 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
         
         cameraView = (SurfaceView)findViewById(R.id.cameraView);
         overlayView = (OverlayView)findViewById(R.id.overlayView);
+        cycleColorButton = (ImageButton)findViewById(R.id.cycleColorButton);
+        shutterButton = (ShutterButton)findViewById(R.id.shutterButton);
+        shutterButton.setOnShutterButtonListener(this);
         
         arManager = ARManager.createAndSetupCameraView(this, cameraView, this);
         arManager.setPreferredPreviewSize(640,400);
         arManager.setNumberOfPreviewCallbackBuffers(1);
 
-        overlayView.setOnTouchListener(new View.OnTouchListener() {
-            public boolean onTouch(View v, MotionEvent event) {
-                handleMainViewTouch(event);
-                return true;
-            }
-        });
-        
-        this.findViewById(R.id.switchCameraButton).setVisibility(CameraUtils.numberOfCameras() > 1 ? View.VISIBLE : View.GONE);
-        
+        findViewById(R.id.switchCameraButton).setVisibility(CameraUtils.numberOfCameras() > 1 ? View.VISIBLE : View.GONE);
         updateFromPreferences();
+        updateColorButton();
     }
     
     SurfaceView cameraView;
@@ -85,19 +89,15 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
         super.onResume();
         appVisible = true;
         arManager.startCameraIfVisible();
+        AndroidUtils.setSystemUiLowProfile(cameraView);
     }
 
-    public void handleMainViewTouch(MotionEvent event) {
-        if (event.getAction()==MotionEvent.ACTION_DOWN) {
-        	AsciiConverter.ColorType[] colorTypeValues = AsciiConverter.ColorType.values();
-        	this.colorType = colorTypeValues[(this.colorType.ordinal() + 1) % colorTypeValues.length];
-            saveColorStyleToPreferences();
-        }
-    }
-    
     void updateFromPreferences() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-        pixelChars = prefs.getString(getString(R.string.pixelCharsPrefId), null);
+        for(AsciiConverter.ColorType colorType : AsciiConverter.ColorType.values()) {
+        	String prefsKey = getString(R.string.pixelCharsPrefIdPrefix) + colorType.name();
+        	pixelCharsMap.put(colorType, prefs.getString(prefsKey, ""));
+        }
         
         String colorTypeName = prefs.getString("colorType", null);
         if (colorTypeName!=null) {
@@ -132,7 +132,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
     	return BASE_PICTURE_DIR + File.separator + "thumbnails";
     }
 
-    public void onClick_takePicture(View view) {
+    void takePicture() {
         try {
             String datestr = FILENAME_DATE_FORMAT.format(new Date());
             String dir = BASE_PICTURE_DIR + File.separator + datestr;
@@ -149,6 +149,25 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
         catch(IOException ex) {
             Log.e("AsciiCam", "Error saving picture", ex);
         }
+    }
+
+    void updateColorButton() {
+    	try {
+    		String resName = "btn_color_" + this.colorType.name().toLowerCase();
+    		Integer resId = (Integer)R.drawable.class.getField(resName).get(null);
+    		cycleColorButton.setImageResource(resId);
+    	}
+    	catch(Exception ex) {
+    		Log.e("AsciiCam", "Error updating color button", ex);
+    	}
+    }
+    
+    // onClick_ methods are assigned as onclick handlers in the main.xml layout
+    public void onClick_cycleColorMode(View view) {
+    	AsciiConverter.ColorType[] colorTypeValues = AsciiConverter.ColorType.values();
+    	this.colorType = colorTypeValues[(this.colorType.ordinal() + 1) % colorTypeValues.length];
+        saveColorStyleToPreferences();
+        updateColorButton();
     }
     
     public void onClick_gotoGallery(View view) {
@@ -197,13 +216,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
                         output.write(asciiChar);
                         continue;
                     }
-                    int color;
-                    if (asciiResult.hasColor()) {
-                        color = asciiResult.colorAtRowColumn(r, c);
-                    }
-                    else {
-                        color = 0xffffffff;
-                    }
+                    int color = asciiResult.colorAtRowColumn(r, c);
                     if (color==lastColor) {
                         output.write(asciiChar);
                         continue;
@@ -259,7 +272,8 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
         overlayView.setCameraPreviewSize(size.width, size.height);
         synchronized(pictureLock) {
             asciiConverter.computeResultForCameraData(data, size.width, size.height, 
-                    overlayView.asciiRows(), overlayView.asciiColumns(), colorType, pixelChars, asciiResult);
+                    overlayView.asciiRows(), overlayView.asciiColumns(), 
+                    colorType, pixelCharsMap.get(colorType), asciiResult);
         }
         
         overlayView.setAsciiConverterResult(asciiResult);
@@ -267,4 +281,15 @@ public class AsciiCamActivity extends Activity implements PreviewCallback {
         
         CameraUtils.addPreviewCallbackBuffer(camera, data);
     }
+
+	@Override
+	public void onShutterButtonFocus(boolean pressed) {
+		shutterButton.setImageResource(pressed ? R.drawable.btn_camera_shutter_pressed_holo : 
+			                                     R.drawable.btn_camera_shutter_holo);
+	}
+
+	@Override
+	public void onShutterButtonClick() {
+		takePicture();
+	}
 }

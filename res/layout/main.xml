@@ -31,13 +31,26 @@
             android:paddingTop="5dp"
             android:visibility="visible" >
 
-            <ImageButton
-                android:id="@+id/cameraActionButton"
+            <com.dozingcatsoftware.util.ShutterButton
+                android:id="@+id/shutterButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:background="#00000000"
-                android:onClick="onClick_takePicture"
-                android:src="@drawable/camera_save" />
+                android:clickable="true"
+                android:src="@drawable/btn_camera_shutter_holo" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="10dp" />
+
+            <ImageButton
+                android:id="@+id/cycleColorButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="#00000000"
+                android:onClick="onClick_cycleColorMode"
+                android:src="@drawable/btn_color_full_color" />
 
             <View
                 android:layout_width="0dp"
@@ -74,7 +87,7 @@
                 android:layout_gravity="center"
                 android:background="#00000000"
                 android:onClick="onClick_switchCamera"
-                android:src="@drawable/switch_camera" />
+                android:src="@drawable/ic_switch_photo_facing_holo_light" />
 
             <LinearLayout
                 android:id="@+id/verticalButtonBar"

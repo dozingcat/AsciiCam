@@ -82,9 +82,7 @@ public class OverlayView extends View {
                 int x = xoffset;
                 for(int c=0; c<cols; c++) {
                     String s = asciiResult.stringAtRowColumn(r, c);
-                    if (asciiResult.hasColor()) {
-                        textPaint.setColor(asciiResult.colorAtRowColumn(r, c));
-                    }
+                    textPaint.setColor(asciiResult.colorAtRowColumn(r, c));
                     canvas.drawText(s, x, y, textPaint);
                     x += charPixelWidth;
                 }
@@ -124,18 +122,15 @@ public class OverlayView extends View {
                     int xmin = (int)(width*c / asciiResult.columns);
                     int xmax = (int)(width*(c+2) / asciiResult.columns);
                     float ratio = asciiResult.ratioAtRowColumn(r, c);
-                    if (ratio > 0) {
-                        if (asciiResult.hasColor()) {
-                            paint.setColor(asciiResult.colorAtRowColumn(r, c));
-                        }
-                        if (ratio > 0.5) {
-                            canvas.drawRect(xmin, ymin, xmax, ymax, paint);
-                        }
-                        else {
-                            int x = (xmin + xmax) / 2 - 1;
-                            int y = (ymin + ymax) / 2 - 1;
-                            canvas.drawRect(x, y, x+2, y+2, paint);
-                        }
+                    paint.setColor(asciiResult.colorAtRowColumn(r, c));
+                    // for full color, always draw larger rectangle because colors will be darker
+                    if (asciiResult.getColorType()==AsciiConverter.ColorType.FULL_COLOR || ratio > 0.5) {
+                    	canvas.drawRect(xmin, ymin, xmax, ymax, paint);
+                    }
+                    else {
+                    	int x = (xmin + xmax) / 2 - 1;
+                    	int y = (ymin + ymax) / 2 - 1;
+                    	canvas.drawRect(x, y, x+2, y+2, paint);
                     }
                 }
             }

@@ -14,8 +14,21 @@
 	<string name="aboutButtonLabel">About</string>
 	<string name="preferencesButtonLabel">Preferences</string>
 	
-	<string name="pixelCharsPrefId">pixelChars</string>
-	<string name="pixelCharsPrefTitle">Pixel Characters</string>
-	<string name="pixelCharsPrefSummary">Enter characters to use in images from darkest to brightest, or leave blank for default of .:oO8@</string>
+	<string name="pixelCharsPrefIdPrefix">pixelChars.</string>
+	
+    <string name="bwPixelCharsPrefId">pixelChars.NONE</string>
+    <string name="bwPixelCharsPrefTitle">Black and White Characters</string>
+    <string name="bwPixelCharsPrefSummary">Characters for black and white mode.</string>
+    <string name="bwPixelCharsPrefMessage">Enter characters to use in images from darkest to brightest, or leave blank for the default of .:oO8@</string>
+
+    <string name="ansiColorPixelCharsPrefId">pixelChars.ANSI_COLOR</string>
+    <string name="ansiColorPixelCharsPrefTitle">ANSI Color Characters</string>
+    <string name="ansiColorPixelCharsPrefSummary">Characters for ANSI color mode.</string>
+    <string name="ansiColorPixelCharsPrefMessage">Enter characters to use in images from darkest to brightest, or leave blank for the default of .:oO8@</string>
+
+    <string name="fullColorPixelCharsPrefId">pixelChars.FULL_COLOR</string>
+    <string name="fullColorPixelCharsPrefTitle">Full Color Characters</string>
+    <string name="fullColorPixelCharsPrefSummary">Characters for full color mode.</string>
+    <string name="fullColorPixelCharsPrefMessage">Enter characters to use in images from darkest to brightest. Full color mode usually works best with fewer or even just one character. Leave blank for default of O8@</string>
 
 </resources>

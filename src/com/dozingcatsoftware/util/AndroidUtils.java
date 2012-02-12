@@ -3,6 +3,7 @@
 package com.dozingcatsoftware.util;
 
 import java.io.FileNotFoundException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 import android.content.Context;
@@ -123,5 +124,24 @@ public class AndroidUtils {
         int[] output = new int[2];
         getScaledWidthAndHeightToMaximum(width, height, maxWidth, maxHeight, output);
         return output;
+    }
+    
+    /** On API level 14 (ICS) or higher, calls view.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE)
+     * and returns true. On earlier API versions, does nothing and returns false.
+     */
+    public static boolean setSystemUiLowProfile(View view) {
+    	return setSystemUiVisibility(view, "SYSTEM_UI_FLAG_LOW_PROFILE");
+    }
+    
+    static boolean setSystemUiVisibility(View view, String flagName) {
+    	try {
+    		Method setUiMethod = View.class.getMethod("setSystemUiVisibility", int.class);
+    		Field flagField = View.class.getField(flagName);
+    		setUiMethod.invoke(view, flagField.get(null));
+    		return true;
+    	}
+    	catch(Exception ex) {
+    		return false;
+    	}
     }
 }

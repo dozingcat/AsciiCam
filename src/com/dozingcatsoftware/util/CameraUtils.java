@@ -233,6 +233,17 @@ public class CameraUtils {
         catch(Exception ignored) {}
         return Collections.singletonList("off");
     }
+    
+    public static String getCurrentFlashMode(Camera camera) {
+        Camera.Parameters params = camera.getParameters();
+        try {
+            Method getModeMethod = params.getClass().getMethod("getFlashMode");
+            return (String)getModeMethod.invoke(camera);
+        }
+        catch(Exception ex) {
+        	return null;
+        }
+    }
 
     /** Attempts to set the camera's flash mode. Returns true if successful, false if the Android API doesn't support setting flash modes.
      */
@@ -258,4 +269,14 @@ public class CameraUtils {
     public static boolean cameraSupportsAutoFlash(Camera camera) {
         return getFlashModes(camera).contains("auto");
     }
+    
+    /** Returns true if the camera supports torch mode (flash always on). */
+    public static boolean cameraSupportsTorch(Camera camera) {
+        return getFlashModes(camera).contains("torch");
+    }
+    
+    public static boolean cameraInTorchMode(Camera camera) {
+    	return "torch".equals(getCurrentFlashMode(camera));
+    }
+
 }

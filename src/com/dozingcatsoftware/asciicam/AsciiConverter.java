@@ -21,7 +21,7 @@ public class AsciiConverter {
     public static enum ColorType {
         NONE,
         ANSI_COLOR,
-        //FULL_COLOR,
+        FULL_COLOR,
     }
     
     public static class Result {
@@ -34,8 +34,8 @@ public class AsciiConverter {
         int[] asciiIndexes;
         int[] asciiColors;
         
-        public boolean hasColor() {
-            return colorType!=ColorType.NONE;
+        public ColorType getColorType() {
+            return colorType;
         }
         
         public String stringAtRowColumn(int row, int col) {
@@ -43,6 +43,7 @@ public class AsciiConverter {
         }
         
         public int colorAtRowColumn(int row, int col) {
+        	if (colorType==ColorType.NONE) return 0xffffffff; 
             return asciiColors[row*columns + col];
         }
         
@@ -270,18 +271,12 @@ public class AsciiConverter {
                     if (maxColor==0) {
                         averageRed = averageGreen = averageBlue = MAX_COLOR_VAL;
                     }
-                    else {
-                        float scaleFactor = 1.0f*MAX_COLOR_VAL / maxColor;
-                        // don't exceed MAX_COLOR_VAL via floating point rounding
-                        averageRed = Math.min((int)(averageRed*scaleFactor), MAX_COLOR_VAL);
-                        averageGreen = Math.min((int)(averageGreen*scaleFactor), MAX_COLOR_VAL);
-                        averageBlue = Math.min((int)(averageBlue*scaleFactor), MAX_COLOR_VAL);
-                    }
                     // for ANSI mode, force each RGB component to be either max or 0
                     if (colorType==ColorType.ANSI_COLOR) {
-                        averageRed = (averageRed >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
-                        averageGreen = (averageGreen >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
-                        averageBlue = (averageBlue >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+                        float scaleFactor = 1.0f*MAX_COLOR_VAL / maxColor;
+                        averageRed = (averageRed*scaleFactor >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+                        averageGreen = (averageGreen*scaleFactor >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+                        averageBlue = (averageBlue*scaleFactor >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
                     }
                     result.asciiColors[asciiIndex] = (0xff000000) | ((averageRed << 6) & 0xff0000) |
                                                     ((averageGreen >> 2) & 0xff00) | ((averageBlue >> 10));
