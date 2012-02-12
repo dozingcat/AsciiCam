@@ -1,7 +1,7 @@
-// Copyright (C) 2012 Brian Nenninger
-
 #include <jni.h>
 #include <stdlib.h>
+
+/* These functions are the C versions of the ASCII conversion algorithms in AsciiConverter.java. */
 
 void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesBWNative(JNIEnv* env, jobject thiz, 
         jbyteArray jdata, jint imageWidth, jint imageHeight, 
@@ -49,7 +49,7 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorN
     jint *colorOutput = (*env)->GetIntArrayElements(env, jcolorOutput, 0);
     
     static int MAX_COLOR_VAL = 262143; // 2**18-1
-    int HALF_MAX_COLOR_VAL = MAX_COLOR_VAL * 7 / 8;
+    static float ANSI_COLOR_RATIO = 7.0f/8;
     int asciiIndex = startRow * asciiCols;
     for(int r=startRow; r<endRow; r++) {
         // compute grid of data pixels whose brightness to average
@@ -96,25 +96,15 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorN
             int averageGreen = totalGreen / samples;
             int averageBlue = totalBlue / samples;
             
+            if (ansiColor) {
             // force highest color component to maximum (brightness is already handled by char)
-            int maxRG = (averageRed > averageGreen) ? averageRed : averageGreen;
-            int maxColor = (averageBlue > maxRG) ? averageBlue : maxRG;
-            if (maxColor==0) {
-                averageRed = averageGreen = averageBlue = MAX_COLOR_VAL;
-            }
-            else {
-                float scaleFactor = 1.0f*MAX_COLOR_VAL / maxColor;
-                /*
-                // don't exceed MAX_COLOR_VAL via floating point rounding
-                averageRed = (int)(averageRed*scaleFactor); if (averageRed>MAX_COLOR_VAL) averageRed=MAX_COLOR_VAL;
-                averageGreen = (int)(averageGreen*scaleFactor); if (averageGreen>MAX_COLOR_VAL) averageGreen=MAX_COLOR_VAL;
-                averageBlue = (int)(averageBlue*scaleFactor); if (averageBlue>MAX_COLOR_VAL) averageBlue=MAX_COLOR_VAL;
-                */
-                // for ascii mode, clamp each RGB component to max or 0
-                if (ansiColor) {
-                    averageRed = (averageRed*scaleFactor >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
-                    averageGreen = (averageGreen*scaleFactor >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
-                    averageBlue = (averageBlue*scaleFactor >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+                int maxRG = (averageRed > averageGreen) ? averageRed : averageGreen;
+                int maxColor = (averageBlue > maxRG) ? averageBlue : maxRG;
+                if (maxColor > 0) {
+                    int threshold = (int)(maxColor * ANSI_COLOR_RATIO);
+                    averageRed = (averageRed >= threshold) ? MAX_COLOR_VAL : 0;
+                    averageGreen = (averageGreen >= threshold) ? MAX_COLOR_VAL : 0;
+                    averageBlue = (averageBlue >= threshold) ? MAX_COLOR_VAL : 0;
                 }
             }
             colorOutput[asciiIndex] = (0xff000000) | ((averageRed << 6) & 0xff0000) |
@@ -122,7 +112,6 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorN
             ++asciiIndex;
         }
     }
-    
     
     (*env)->ReleaseByteArrayElements(env, jdata, data, 0);
     (*env)->ReleaseIntArrayElements(env, jasciiOutput, asciiOutput, 0);

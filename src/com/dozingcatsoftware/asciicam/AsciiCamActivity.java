@@ -194,11 +194,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
         String outputFilePath;
         FileWriter output = null;
         try {
-            output = new FileWriter(dir + File.separator + imageName + ".txt");
-            output.write(asciiResult.getAsciiString(true));
-            output.close();
-            
-            outputFilePath = dir + File.separator + imageName + ".html";
+        	outputFilePath = dir + File.separator + imageName + ".html";
             output = new FileWriter(outputFilePath);
             output.write("<html><head></title>Ascii Picture " + imageName + "</title></head>");
             output.write("<body><div style=\"background: black; letter-spacing: 3px;\">\n");

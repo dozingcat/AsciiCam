@@ -9,6 +9,8 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
+/** View which displays the ASCII image computed from the camera preview.
+ */
 public class OverlayView extends View {
 
     public OverlayView(Context context, AttributeSet attrs) {
@@ -121,7 +123,7 @@ public class OverlayView extends View {
                 for(int c=0; c<asciiResult.columns; c+=2) {
                     int xmin = (int)(width*c / asciiResult.columns);
                     int xmax = (int)(width*(c+2) / asciiResult.columns);
-                    float ratio = asciiResult.ratioAtRowColumn(r, c);
+                    float ratio = asciiResult.brightnessRatioAtRowColumn(r, c);
                     paint.setColor(asciiResult.colorAtRowColumn(r, c));
                     // for full color, always draw larger rectangle because colors will be darker
                     if (asciiResult.getColorType()==AsciiConverter.ColorType.FULL_COLOR || ratio > 0.5) {

@@ -25,6 +25,9 @@ import android.widget.ImageView;
 import android.widget.SimpleAdapter;
 import android.widget.AdapterView.OnItemClickListener;
 
+/** Activity which displays all pictures the user has taken in a scrolling grid. Selecting an image opens it
+ * in a ViewImageActivity.
+ */
 public class LibraryActivity extends Activity {
     
     static int CELL_WIDTH = 92;

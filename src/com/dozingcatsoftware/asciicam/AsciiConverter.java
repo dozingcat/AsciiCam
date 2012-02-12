@@ -10,20 +10,39 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 
+/** This class converts pixel data received from the camera into ASCII characters using brightness
+ * and color information. 
+ * @author brian
+ *
+ */
+
 public class AsciiConverter {
     
-    static final boolean DEBUG = true;
-    
-    static String[] DEFAULT_PIXEL_CHARS = new String[] {
-        " ", ".", ":", "o", "O", "8", "@",
-    };
+    static final boolean DEBUG = false;
     
     public static enum ColorType {
-        NONE,
-        ANSI_COLOR,
-        FULL_COLOR,
+    	// all same color
+        NONE(" .:oO8@"),
+        
+        // primary colors and combinations (red/green/blue/cyan/magenta/yellow/white)
+        ANSI_COLOR(" .:oO8@"),
+        
+        // all colors
+        FULL_COLOR("O8@");
+        
+        String[] pixelChars;
+        
+        private ColorType(String pixelCharString) {
+        	this.pixelChars = toPixelCharArray(pixelCharString);
+        }
+        
+        public String[] getDefaultPixelChars() {
+        	return pixelChars;
+        }
     }
     
+    /** Holds the result of computing ASCII output from the input camera data. 
+     */
     public static class Result {
         public int rows;
         public int columns;
@@ -47,20 +66,8 @@ public class AsciiConverter {
             return asciiColors[row*columns + col];
         }
         
-        public float ratioAtRowColumn(int row, int col) {
+        public float brightnessRatioAtRowColumn(int row, int col) {
             return 1.0f*asciiIndexes[row*columns + col] / pixelChars.length;
-        }
-        
-        public String getAsciiString(boolean includeNewlines) {
-            StringBuilder buffer = new StringBuilder();
-            int index = 0;
-            for(int r=0; r<rows; r++) {
-                for(int c=0; c<columns; c++) {
-                    buffer.append(pixelChars[asciiIndexes[index++]]);
-                }
-                if (includeNewlines) buffer.append("\n");
-            }
-            return buffer.toString();
         }
         
         public String getDebugInfo() {
@@ -85,6 +92,11 @@ public class AsciiConverter {
         catch(Throwable ignored) {}
     }
     
+    /** Image processing can be broken up into multiple workers, with each worker computing a portion of
+     * the image rows. This allows using all CPU cores on multicore devices. 
+     * @author brian
+     *
+     */
     class Worker implements Callable {
         // identifies which segment this worker will compute
         int totalSegments;
@@ -174,6 +186,7 @@ public class AsciiConverter {
             ((Worker)worker).setValues(data, imageWidth, imageHeight, asciiRows, asciiCols, toPixelCharArray(pixelCharString), colorType, result);
         }
         try {
+        	// invoke call() method of all workers and wait for them to finish
             List threadTimes = threadPool.invokeAll(threadWorkers);
             if (DEBUG) {
                 long t2 = System.nanoTime();
@@ -192,13 +205,17 @@ public class AsciiConverter {
         catch(InterruptedException ignored) {}
     }
     
+    /** Main computation method. Takes camera input data, number of ASCII rows and columns to convert to, and the ASCII
+     * characters to use ordered by brightness. For each ASCII character in the output, determines the corresponding
+     * rectangle of pixels in the input image and computes the average brightness and RGB components if using color. 
+     */
     private void computeResultForRows(byte[] data, int imageWidth, int imageHeight,
             int asciiRows, int asciiCols, ColorType colorType, String[] pixelChars, Result result,
             int startRow, int endRow) {
         result.rows = asciiRows;
         result.columns = asciiCols;
         result.colorType = colorType;
-        if (pixelChars==null) pixelChars = DEFAULT_PIXEL_CHARS;
+        if (pixelChars==null) pixelChars = colorType.getDefaultPixelChars();
         result.pixelChars = pixelChars;
         
         if (result.asciiIndexes==null || result.asciiIndexes.length!=asciiRows*asciiCols) {
@@ -218,10 +235,13 @@ public class AsciiConverter {
             }
             
             final int MAX_COLOR_VAL = (1 << 18) - 1;
-            final int HALF_MAX_COLOR_VAL = MAX_COLOR_VAL * 7 / 8;
+            // For ANSI mode, if a color component (red/green/blue) is at least this fraction of the maximum
+            // component, turn it on. {red=200, green=180, blue=160} would become yellow: green ratio is
+            // 0.9 so it's enabled, blue is 0.8 so it isn't.
+            final float ANSI_COLOR_RATIO = 7.0f/8;
             int asciiIndex = startRow * asciiCols;
             for(int r=startRow; r<endRow; r++) {
-                // compute grid of data pixels whose brightness to average
+                // compute grid of data pixels whose brightness and colors to average
                 int ymin = imageHeight * r / asciiRows;
                 int ymax = imageHeight * (r+1) / asciiRows;
                 for(int c=0; c<asciiCols; c++) {
@@ -233,16 +253,19 @@ public class AsciiConverter {
                     int samples = 0;
                     for(int y=ymin; y<ymax; y++) {
                         int rowoffset = imageWidth * y;
+                        // UV data is only stored for every other row and column, so there are 1/4 as many (U,V) byte
+                        // pairs as there are pixels (and 1/2 as many total UV bytes).
                         int uvoffset = imageWidth * imageHeight + (imageWidth * (y / 2));
                         for(int x=xmin; x<xmax; x++) {
                             samples++;
                             int bright = 0xff & data[rowoffset+x];
                             totalBright += bright;
-                            // YUV to RGB conversion
+                            // YUV to RGB conversion, produces 18-bit RGB components
+                            // adapted from http://stackoverflow.com/questions/8399411/how-to-retrieve-rgb-value-for-each-color-apart-from-one-dimensional-integer-rgb
                             int yy = bright - 16;
                             if (yy < 0) yy = 0;
                             
-                            int uvindex = uvoffset + (x & ~1);
+                            int uvindex = uvoffset + (x & ~1); // 0, 0, 2, 2, 4, 4...
                             int v = (0xff & data[uvindex]) - 128;
                             int u = (0xff & data[uvindex + 1]) - 128;
                             int y1192 = 1192 * yy;
@@ -265,18 +288,18 @@ public class AsciiConverter {
                     int averageGreen = totalGreen / samples;
                     int averageBlue = totalBlue / samples;
                     
-                    // force highest color component to maximum (brightness is already handled by char)
-                    int maxRG = (averageRed > averageGreen) ? averageRed : averageGreen;
-                    int maxColor = (averageBlue > maxRG) ? averageBlue : maxRG;
-                    if (maxColor==0) {
-                        averageRed = averageGreen = averageBlue = MAX_COLOR_VAL;
-                    }
                     // for ANSI mode, force each RGB component to be either max or 0
                     if (colorType==ColorType.ANSI_COLOR) {
-                        float scaleFactor = 1.0f*MAX_COLOR_VAL / maxColor;
-                        averageRed = (averageRed*scaleFactor >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
-                        averageGreen = (averageGreen*scaleFactor >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
-                        averageBlue = (averageBlue*scaleFactor >= HALF_MAX_COLOR_VAL) ? MAX_COLOR_VAL : 0;
+                        // Force highest color component to maximum (brightness is already handled by char).
+                    	// Other components go to maximum if their ratio to the highest component is at least ANSI_COLOR_RATIO.
+                        int maxRG = (averageRed > averageGreen) ? averageRed : averageGreen;
+                        int maxColor = (averageBlue > maxRG) ? averageBlue : maxRG;
+                        if (maxColor > 0) {
+                            int threshold = (int)(maxColor * ANSI_COLOR_RATIO);
+                            averageRed = (averageRed >= threshold) ? MAX_COLOR_VAL : 0;
+                            averageGreen = (averageGreen >= threshold) ? MAX_COLOR_VAL : 0;
+                            averageBlue = (averageBlue >= threshold) ? MAX_COLOR_VAL : 0;
+                        }
                     }
                     result.asciiColors[asciiIndex] = (0xff000000) | ((averageRed << 6) & 0xff0000) |
                                                     ((averageGreen >> 2) & 0xff00) | ((averageBlue >> 10));
@@ -286,6 +309,7 @@ public class AsciiConverter {
             
         }
         else {
+        	// black and white mode; we only need to look at pixel brightness
             if (nativeCodeAvailable) {
                 getAsciiValuesBWNative(data, imageWidth, imageHeight, asciiRows, asciiCols, 
                         pixelChars.length, result.asciiIndexes, startRow, endRow);

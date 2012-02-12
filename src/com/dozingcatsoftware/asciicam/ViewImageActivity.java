@@ -16,6 +16,9 @@ import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
 
+/** Activity for displaying a single image. The user can delete the image, or share it in
+ * its PNG or HTML representations.
+ */
 public class ViewImageActivity extends Activity {
     
     public static final int DELETE_RESULT = Activity.RESULT_FIRST_USER;
