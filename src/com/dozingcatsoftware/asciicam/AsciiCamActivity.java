@@ -27,8 +27,10 @@ import android.hardware.Camera.PreviewCallback;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
@@ -49,6 +51,8 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
     ImageButton cycleColorButton;
     ShutterButton shutterButton;
     
+    Handler handler = new Handler();
+
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -287,5 +291,19 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
 	@Override
 	public void onShutterButtonClick() {
 		takePicture();
+	}
+
+	@Override
+	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	    // take picture when pushing hardware camera button or trackball center
+	    if ((keyCode==KeyEvent.KEYCODE_CAMERA || keyCode==KeyEvent.KEYCODE_DPAD_CENTER) && event.getRepeatCount()==0) {
+	        handler.post(new Runnable() {
+	            public void run() {
+	                takePicture();
+	            }
+	        });
+	        return true;
+	    }
+	    return super.onKeyDown(keyCode, event);
 	}
 }

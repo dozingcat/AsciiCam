@@ -90,6 +90,7 @@ public class ScaledBitmapCache {
             try {
                 // create thumbnail directory if it doesn't exist
                 thumbfile.getParentFile().mkdirs();
+                // TODO: create noindex file
                 OutputStream thumbnailOutputStream = new FileOutputStream(thumbfile);
                 bitmap.compress(CompressFormat.JPEG, 90, thumbnailOutputStream);
                 thumbnailOutputStream.close();

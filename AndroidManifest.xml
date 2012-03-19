@@ -14,7 +14,7 @@
         android:label="@string/app_name" android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
         <activity
             android:label="@string/app_name"
-            android:name=".AsciiCamActivity" android:screenOrientation="landscape">
+            android:name=".AsciiCamActivity" android:screenOrientation="landscape" android:configChanges="keyboard|keyboardHidden">
             <intent-filter >
                 <action android:name="android.intent.action.MAIN" />
 
