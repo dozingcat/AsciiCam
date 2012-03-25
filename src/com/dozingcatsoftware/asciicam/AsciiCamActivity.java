@@ -140,10 +140,16 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
         try {
             String datestr = FILENAME_DATE_FORMAT.format(new Date());
             String dir = BASE_PICTURE_DIR + File.separator + datestr;
+            // make sure image and thumbnail directories exist
             (new File(dir)).mkdirs();
             if (!((new File(dir)).isDirectory())) {
                 return;
             }
+            String thumbnailDir = thumbnailDirectory();
+            (new File(thumbnailDir)).mkdirs();
+            // create .noindex file so thumbnail pictures won't be indexed and show up in the gallery app
+            (new File(thumbnailDir + File.separator + ".nomedia")).createNewFile();
+
             String htmlPath = saveHTML(dir, datestr);
             String pngPath = savePNG(dir, datestr);
             String thumbnailPath = saveThumbnail(thumbnailDirectory(), datestr);
