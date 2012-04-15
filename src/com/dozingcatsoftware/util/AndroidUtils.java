@@ -144,4 +144,17 @@ public class AndroidUtils {
     		return false;
     	}
     }
+    
+    /** Returns the estimated memory usage in bytes for a bitmap. Calls bitmap.getByteCount() if that method
+     * is available (in API level 12 or higher), otherwise returns 4 times the number of pixels in the bitmap.
+     */
+    public static int getBitmapByteCount(Bitmap bitmap) {
+        try {
+            Method byteCountMethod = Bitmap.class.getMethod("getByteCount");
+            return (Integer)byteCountMethod.invoke(bitmap);
+        }
+        catch(Exception ex) {
+            return 4 * bitmap.getWidth() * bitmap.getHeight();
+        }
+    }
 }

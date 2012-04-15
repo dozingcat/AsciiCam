@@ -14,6 +14,7 @@ import java.util.Map;
 
 import com.dozingcatsoftware.util.ARManager;
 import com.dozingcatsoftware.util.AndroidUtils;
+import com.dozingcatsoftware.util.CameraPreviewProcessingQueue;
 import com.dozingcatsoftware.util.CameraUtils;
 import com.dozingcatsoftware.util.ShutterButton;
 import com.dozingcatsoftware.asciicam.R;
@@ -23,7 +24,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
-import android.hardware.Camera.PreviewCallback;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -31,13 +31,15 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
-public class AsciiCamActivity extends Activity implements PreviewCallback, ShutterButton.OnShutterButtonListener {
+public class AsciiCamActivity extends Activity 
+        implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener, CameraPreviewProcessingQueue.Processor {
+    
     ARManager arManager;
     AsciiConverter asciiConverter = new AsciiConverter();
     AsciiConverter.Result asciiResult = new AsciiConverter.Result();
@@ -50,12 +52,18 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
     
     ImageButton cycleColorButton;
     ShutterButton shutterButton;
-    
+    SurfaceView cameraView;
+    OverlayView overlayView;
+
     Handler handler = new Handler();
+    boolean saveInProgress = false;
+    boolean cameraViewReady = false;
+    boolean appVisible = false;
+    
+    CameraPreviewProcessingQueue imageProcessor = new CameraPreviewProcessingQueue();
 
     /** Called when the activity is first created. */
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
+    @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.main);
@@ -75,24 +83,19 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
         updateColorButton();
     }
     
-    SurfaceView cameraView;
-    OverlayView overlayView;
-    boolean cameraViewReady = false;
-    boolean appVisible = false;
-
-    @Override
-    public void onPause() {
+    @Override public void onPause() {
         appVisible = false;
         arManager.stopCamera();
         asciiConverter.destroyThreadPool();
+        imageProcessor.stop();
         super.onPause();
     }
     
-    @Override
-    public void onResume() {
+    @Override public void onResume() {
         super.onResume();
         appVisible = true;
         arManager.startCameraIfVisible();
+        imageProcessor.start(this);
         AndroidUtils.setSystemUiLowProfile(cameraView);
     }
 
@@ -121,8 +124,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
     	editor.commit();
     }
     
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent intent) { 
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent intent) { 
         super.onActivityResult(requestCode, resultCode, intent); 
 
         switch(requestCode) { 
@@ -136,7 +138,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
     	return BASE_PICTURE_DIR + File.separator + "thumbnails";
     }
 
-    void takePicture() {
+    void takePictureThreadEntry(AsciiConverter.Result result) {
         try {
             String datestr = FILENAME_DATE_FORMAT.format(new Date());
             String dir = BASE_PICTURE_DIR + File.separator + datestr;
@@ -145,19 +147,55 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
             if (!((new File(dir)).isDirectory())) {
                 return;
             }
+            final String pngPath = saveBitmap(overlayView.getVisibleBitmap(), dir, datestr);
+            handler.post(new Runnable() {
+               public void run() {
+                   bitmapSaved(pngPath, "image/png");
+               }
+            });
+            
+            // TODO: this assumes that the HTML file will be created before the user shares it
             String thumbnailDir = thumbnailDirectory();
             (new File(thumbnailDir)).mkdirs();
             // create .noindex file so thumbnail pictures won't be indexed and show up in the gallery app
             (new File(thumbnailDir + File.separator + ".nomedia")).createNewFile();
 
-            String htmlPath = saveHTML(dir, datestr);
-            String pngPath = savePNG(dir, datestr);
-            String thumbnailPath = saveThumbnail(thumbnailDirectory(), datestr);
-            
-            ViewImageActivity.startActivityWithImageURI(this, Uri.fromFile(new File(pngPath)), "image/png");
+            String htmlPath = saveHTML(dir, datestr, result);
+            String thumbnailPath = saveThumbnail(thumbnailDirectory(), datestr, result);
         }
         catch(IOException ex) {
             Log.e("AsciiCam", "Error saving picture", ex);
+        }
+    }
+    
+    void takePicture() {
+        if (saveInProgress) return;
+        // use a separate thread to write the PNG and HTML files, so the UI doesn't block
+        imageProcessor.pause();
+        (new Thread() {
+            public void run() {
+                AsciiConverter.Result savePictureResult = null;
+                synchronized(pictureLock) {
+                    savePictureResult = asciiResult.copy();
+                }
+                try {
+                    takePictureThreadEntry(savePictureResult);                    
+                }
+                finally {
+                    imageProcessor.unpause();
+                }
+            }
+        }).start();
+    }
+    
+    void bitmapSaved(String path, String mimeType) {
+        saveInProgress = false;
+        if (!appVisible) return;
+        if (path==null) {
+            Toast.makeText(getApplicationContext(), getString(R.string.errorSavingPicture), Toast.LENGTH_SHORT);
+        }
+        else {
+            ViewImageActivity.startActivityWithImageURI(this, Uri.fromFile(new File(path)), mimeType);
         }
     }
 
@@ -200,7 +238,7 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
     static DateFormat FILENAME_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
     static String BASE_PICTURE_DIR = Environment.getExternalStorageDirectory() + File.separator + "AsciiCam";
     
-    String saveHTML(String dir, String imageName) throws IOException {
+    String saveHTML(String dir, String imageName, AsciiConverter.Result result) throws IOException {
         String outputFilePath;
         FileWriter output = null;
         try {
@@ -210,19 +248,19 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
             output.write("<body><div style=\"background: black; letter-spacing: 3px;\">\n");
 
             output.write("<pre>");
-            for(int r=0; r<asciiResult.rows; r++) {
+            for(int r=0; r<result.rows; r++) {
                 int lastColor = -1;
                 // loop precondition: output is in the middle of a <span> tag.
                 // This allows skipping the tag if it's a space or the same color as previous char.
                 output.write("<span>");
-                for(int c=0; c<asciiResult.columns; c++) {
-                    String asciiChar = asciiResult.stringAtRowColumn(r, c);
+                for(int c=0; c<result.columns; c++) {
+                    String asciiChar = result.stringAtRowColumn(r, c);
                     // don't use span tag for space
                     if (" ".equals(asciiChar)) {
                         output.write(asciiChar);
                         continue;
                     }
-                    int color = asciiResult.colorAtRowColumn(r, c);
+                    int color = result.colorAtRowColumn(r, c);
                     if (color==lastColor) {
                         output.write(asciiChar);
                         continue;
@@ -247,13 +285,8 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
         return outputFilePath;
     }
     
-    String savePNG(String dir, String imageName) throws IOException {
-        Bitmap bitmap = overlayView.drawIntoNewBitmap();
-        return saveBitmap(bitmap, dir, imageName);
-    }
-    
-    String saveThumbnail(String dir, String imageName) throws IOException {
-        Bitmap bitmap = overlayView.drawIntoThumbnailBitmap();
+    String saveThumbnail(String dir, String imageName, AsciiConverter.Result result) throws IOException {
+        Bitmap bitmap = overlayView.drawIntoThumbnailBitmap(result);
         return saveBitmap(bitmap, dir, imageName);
     }
     
@@ -272,35 +305,43 @@ public class AsciiCamActivity extends Activity implements PreviewCallback, Shutt
         return outputFilePath;
     }
 
-    @Override
-    public void onPreviewFrame(byte[] data, Camera camera) {
-        Camera.Size size = camera.getParameters().getPreviewSize();
-        overlayView.setCameraPreviewSize(size.width, size.height);
+    @Override public void onPreviewFrame(byte[] data, Camera camera) {
+        if (!saveInProgress) {
+            Camera.Size size = camera.getParameters().getPreviewSize();
+            imageProcessor.processImageData(data, size.width, size.height);
+        }
+        else {
+            CameraUtils.addPreviewCallbackBuffer(camera, data);
+        }
+    }
+    
+    
+    @Override public void processCameraImage(final byte[] data, final int width, final int height) {
         synchronized(pictureLock) {
-            asciiConverter.computeResultForCameraData(data, size.width, size.height, 
+            overlayView.updateCameraPreviewSize(width, height);
+            asciiConverter.computeResultForCameraData(data, width, height, 
                     overlayView.asciiRows(), overlayView.asciiColumns(), 
                     colorType, pixelCharsMap.get(colorType), asciiResult);
         }
-        
-        overlayView.setAsciiConverterResult(asciiResult);
-        overlayView.postInvalidate();
-        
-        CameraUtils.addPreviewCallbackBuffer(camera, data);
+        handler.post(new Runnable() {
+           public void run() {
+               CameraUtils.addPreviewCallbackBuffer(arManager.getCamera(), data);
+               overlayView.updateFromAsciiResult(asciiResult, width, height);
+           }
+        });
     }
+    
 
-	@Override
-	public void onShutterButtonFocus(boolean pressed) {
+	@Override public void onShutterButtonFocus(boolean pressed) {
 		shutterButton.setImageResource(pressed ? R.drawable.btn_camera_shutter_pressed_holo : 
 			                                     R.drawable.btn_camera_shutter_holo);
 	}
 
-	@Override
-	public void onShutterButtonClick() {
+	@Override public void onShutterButtonClick() {
 		takePicture();
 	}
 
-	@Override
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
+	@Override public boolean onKeyDown(int keyCode, KeyEvent event) {
 	    // take picture when pushing hardware camera button or trackball center
 	    if ((keyCode==KeyEvent.KEYCODE_CAMERA || keyCode==KeyEvent.KEYCODE_DPAD_CENTER) && event.getRepeatCount()==0) {
 	        handler.post(new Runnable() {

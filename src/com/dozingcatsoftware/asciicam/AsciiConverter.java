@@ -73,6 +73,17 @@ public class AsciiConverter {
         public String getDebugInfo() {
             return debugInfo;
         }
+        
+        public Result copy() {
+            Result rcopy = new Result();
+            rcopy.rows = this.rows;
+            rcopy.columns = this.columns;
+            rcopy.colorType = this.colorType;
+            if (pixelChars!=null) rcopy.pixelChars = pixelChars.clone();
+            if (asciiIndexes!=null) rcopy.asciiIndexes = asciiIndexes.clone();
+            if (asciiColors!=null) rcopy.asciiColors = asciiColors.clone();
+            return rcopy;
+        }
     }
     
     static boolean nativeCodeAvailable = false;
@@ -93,9 +104,7 @@ public class AsciiConverter {
     }
     
     /** Image processing can be broken up into multiple workers, with each worker computing a portion of
-     * the image rows. This allows using all CPU cores on multicore devices. 
-     * @author brian
-     *
+     * the image rows. This allows using all CPU cores on multicore devices.
      */
     class Worker implements Callable {
         // identifies which segment this worker will compute
