@@ -3,7 +3,7 @@
 package com.dozingcatsoftware.util;
 
 /**
- * Specialized wrapper around ProcessingQueue for the purpose of processing camera preview images.
+ * Specialized wrapper around SingleItemProcessingQueue for the purpose of processing camera preview images.
  */
 public class CameraPreviewProcessingQueue {
     
@@ -13,9 +13,9 @@ public class CameraPreviewProcessingQueue {
     }
     
     static class CameraPreviewImage {
-        public final byte[] data;
-        public final int width;
-        public final int height;
+        final byte[] data;
+        final int width;
+        final int height;
         
         public CameraPreviewImage(byte[] data, int width, int height) {
             this.data = data;
@@ -24,7 +24,7 @@ public class CameraPreviewProcessingQueue {
         }
     }
     
-    ProcessingQueue<CameraPreviewImage> processingQueue = new ProcessingQueue<CameraPreviewImage>();
+    SingleItemProcessingQueue<CameraPreviewImage> processingQueue = new SingleItemProcessingQueue<CameraPreviewImage>();
 
     /** Called by camera preview callback method when a frame is received.
      */
@@ -33,7 +33,7 @@ public class CameraPreviewProcessingQueue {
     }
     
     public void start(final Processor imageProcessor) {
-        processingQueue.start(new ProcessingQueue.Processor<CameraPreviewImage>() {
+        processingQueue.start(new SingleItemProcessingQueue.Processor<CameraPreviewImage>() {
             @Override public void processData(CameraPreviewImage data) {
                 imageProcessor.processCameraImage(data.data, data.width, data.height);
             }

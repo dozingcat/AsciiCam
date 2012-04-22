@@ -4,12 +4,17 @@ package com.dozingcatsoftware.util;
 
 /**
  * A variant of a producer-consumer queue where only a single data object is queued behind
- * the data currently being processed. The idea is that if new data arrives while previous
- * data is still waiting to be processed, we just drop that previous data.
+ * the data currently being processed. If new data arrives while previous data is still 
+ * waiting to be processed, we just drop that previous data. Incoming data is added by
+ * calling {@code queueData}, and is processed on a secondary thread.
  */
-public class ProcessingQueue<T> {
+public class SingleItemProcessingQueue<T> {
     
+    /** Interface defining a method to process incoming data. */
     public static interface Processor<T> {
+        /**
+         * Called on a secondary thread when data is available to process.
+         */
         void processData(T data);
     }
     
@@ -17,16 +22,17 @@ public class ProcessingQueue<T> {
     boolean running;
     boolean paused;
     boolean waiting;
-    T currentData;
     T nextData;
-    Processor<T> dataProcessor;
     
-    public void start(Processor<T> processor, String threadName) {
-        this.dataProcessor = processor;
+    /**
+     * Starts processing data supplied via {@code queueData}, using the specified processor
+     * and optionally setting the processing thread name.
+     */
+    public void start(final Processor<T> processor, String threadName) {
         if (thread==null) {
             thread = new Thread() {
                 public void run() {
-                    threadEntry();
+                    threadEntry(processor);
                 }
             };
             running = true;
@@ -34,11 +40,13 @@ public class ProcessingQueue<T> {
         }
         if (threadName!=null) thread.setName(threadName);
     }
-    
+
+    /** Calls the two-argument start method with no thread name. */
     public void start(Processor<T> processor) {
         start(processor, null);
     }
     
+    /** Stops the processing thread. */
     public void stop() {
         if (thread!=null) {
             running = false;
@@ -53,46 +61,56 @@ public class ProcessingQueue<T> {
         }
     }
     
+    /**
+     * Temporarily halts processing input data. The processing thread is not stopped,
+     * but no incoming data will be processed until {@code unpause} is called.
+     */
     public void pause() {
         paused = true;
     }
+    
+    /** Resumes processing data after a call to {@code pause}. */
     public void unpause() {
         paused = false;
     }
     
+    /**
+     * Adds data to be processed by the processing thread. If there is a previous data object
+     * queued, it will be replaced by this object.
+     */
     public void queueData(T data) {
-        // set nextPreviewImage and notify processor thread if it's waiting for it
-        this.nextData = data;
-        if (waiting) {
-            synchronized(this) {
+        // set nextData and notify processor thread if it's waiting for it
+        synchronized(this) {
+            this.nextData = data;
+            if (waiting) {
                 this.notify();
             }
         }
     }
 
-    void threadEntry() {
+    void threadEntry(Processor<T> processor) {
         try {
             while(running) {
+                T currentData = null;
                 synchronized(this) {
-                    // wait until nextPreviewImage is set in processImageData
+                    // wait until nextData is set in queueData
                     while(this.nextData==null) {
                         waiting = true;
                         try {this.wait(250);}
                         catch(InterruptedException ie) {}
                         if (!running) return;
                     }               
-                    this.currentData = this.nextData;
+                    currentData = this.nextData;
                     this.nextData = null;
                     waiting = false;
                 }
                 if (!paused) {
-                    dataProcessor.processData(this.currentData);
-                    this.currentData = null;
+                    processor.processData(currentData);
                 }
             }
         }
         catch(Throwable ex) {
-            android.util.Log.e("ProcessingQueue", "Exception in ProcessingQueue", ex);
+            android.util.Log.e("SingleItemProcessingQueue", "Exception in SingleItemProcessingQueue", ex);
         }
     }
 
