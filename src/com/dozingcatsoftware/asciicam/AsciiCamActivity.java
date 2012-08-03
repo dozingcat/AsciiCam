@@ -322,6 +322,7 @@ public class AsciiCamActivity extends Activity
             asciiConverter.computeResultForCameraData(data, width, height, 
                     overlayView.asciiRows(), overlayView.asciiColumns(), 
                     colorType, pixelCharsMap.get(colorType), asciiResult);
+            overlayView.setFlipHorizontal(arManager.isCameraFrontFacing());
         }
         handler.post(new Runnable() {
            public void run() {
@@ -331,7 +332,6 @@ public class AsciiCamActivity extends Activity
         });
     }
     
-
 	@Override public void onShutterButtonFocus(boolean pressed) {
 		shutterButton.setImageResource(pressed ? R.drawable.btn_camera_shutter_pressed_holo : 
 			                                     R.drawable.btn_camera_shutter_holo);
@@ -353,4 +353,5 @@ public class AsciiCamActivity extends Activity
 	    }
 	    return super.onKeyDown(keyCode, event);
 	}
+
 }

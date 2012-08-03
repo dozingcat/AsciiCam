@@ -62,7 +62,7 @@ public class AsciiConverter {
         }
         
         public int colorAtRowColumn(int row, int col) {
-        	if (colorType==ColorType.NONE) return 0xffffffff; 
+            if (colorType==ColorType.NONE) return 0xffffffff;
             return asciiColors[row*columns + col];
         }
         

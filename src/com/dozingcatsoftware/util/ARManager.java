@@ -112,6 +112,10 @@ public class ARManager implements SurfaceHolder.Callback {
         switchToCamera((cameraId + 1) % CameraUtils.numberOfCameras());
     }
     
+    public boolean isCameraFrontFacing() {
+        return CameraUtils.cameraIsFrontFacing(cameraId);
+    }
+    
     // SurfaceHolder callbacks
     @Override 
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {

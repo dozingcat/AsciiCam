@@ -6,8 +6,12 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 
+import android.app.Activity;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
+import android.util.Log;
+import android.view.OrientationEventListener;
+import android.view.Surface;
 
 /** This class contains useful methods for working with the camera in Android apps. The methods will build and run 
  * under Android 1.6 or later; methods available only in later versions are called using reflection.
@@ -128,7 +132,7 @@ public class CameraUtils {
      * always opens the primary camera.
      */
     public static Camera openCamera(int cameraId) {
-        if (cameraId>0) {
+        if (cameraId>=0) {
             Method openMethod = null;
             try {
                 openMethod = Camera.class.getMethod("open", int.class);
@@ -174,7 +178,7 @@ public class CameraUtils {
         if (addPreviewBufferMethod==null) return false;
         
         Camera.Size previewSize = camera.getParameters().getPreviewSize();
-        // 12 bits per pixel for preview buffer (8 chroma bytes, then average of 2 bytes each for Cr and Cb)
+        // 12 bits per pixel for preview buffer (8 luminance bits, then average of 2 bits each for Cr and Cb)
         int bufferSize = previewSize.width * previewSize.height * 3 / 2;
         for(int i=0; i<nbuffers; i++) {
             byte[] buffer = new byte[bufferSize];
@@ -277,6 +281,40 @@ public class CameraUtils {
     
     public static boolean cameraInTorchMode(Camera camera) {
     	return "torch".equals(getCurrentFlashMode(camera));
+    }
+    
+    
+    /** Exists for compatibility with Android versions before 2.3 that don't have Camera.CameraInfo. */
+    static class CameraInfo {
+        public static final int CAMERA_FACING_BACK = 0;
+        public static final int CAMERA_FACING_FRONT = 1;
+        
+        public int orientation;
+        public int facing;
+    }
+
+    /** Returns the result of Camera.getCameraInfo(cameraId) as a CameraUtils.CameraInfo object,
+     * which has the same fields as android.hardware.Camera.CameraInfo.
+     */
+    static CameraInfo getCameraInfo(int cameraId) {
+        try {
+            Class cameraInfoClass = Class.forName("android.hardware.Camera$CameraInfo");
+            Object cameraInfo = cameraInfoClass.newInstance();
+            Method getCameraId = Camera.class.getMethod("getCameraInfo", int.class, cameraInfoClass);
+            getCameraId.invoke(null, cameraId, cameraInfo);
+            CameraInfo info = new CameraInfo();
+            info.facing = cameraInfoClass.getField("facing").getInt(cameraInfo);
+            info.orientation = cameraInfoClass.getField("orientation").getInt(cameraInfo);
+            return info;
+        }
+        catch(Exception ex) {
+            return new CameraInfo();
+        }
+    }
+    
+    /** Returns true if the camera is front-facing. */
+    public static boolean cameraIsFrontFacing(int cameraId) {
+        return getCameraInfo(cameraId).facing == CameraInfo.CAMERA_FACING_FRONT;
     }
 
 }

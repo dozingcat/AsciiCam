@@ -5,6 +5,7 @@ package com.dozingcatsoftware.asciicam;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
@@ -28,7 +29,10 @@ public class OverlayView extends View {
     int textSize = 10;
     
     int imageWidth;
-    int imageHeight;    
+    int imageHeight;
+    
+    boolean flipHorizontal;
+    Matrix flipHorizontalMatrix = new Matrix();
     
     /**
      * Called to update the size of the camera preview image, which will be scaled to fit the view
@@ -50,7 +54,6 @@ public class OverlayView extends View {
     public int asciiColumnsForWidth(int width) {
         return width / charPixelWidth;
     }
-    
     public int asciiRowsForHeight(int height) {
         return height / charPixelHeight;
     }
@@ -62,12 +65,23 @@ public class OverlayView extends View {
         return asciiColumnsForWidth(this.imageWidth);
     }
     
+    public void setFlipHorizontal(boolean value) {
+        flipHorizontal = value;
+    }
+    
     @Override protected void onDraw(Canvas canvas) {
         if (visibleBitmap==null) return;
         int xoffset = (this.getWidth() - this.visibleBitmap.getWidth()) / 2;
         int yoffset = (this.getHeight() - this.visibleBitmap.getHeight()) / 2;
         canvas.drawARGB(255, 0, 0, 0);
-        canvas.drawBitmap(visibleBitmap, xoffset, yoffset, null);
+        if (flipHorizontal) {
+            flipHorizontalMatrix.setScale(-1,1);
+            flipHorizontalMatrix.postTranslate(visibleBitmap.getWidth() + xoffset, yoffset);
+            canvas.drawBitmap(visibleBitmap, flipHorizontalMatrix, null);
+        }
+        else {
+            canvas.drawBitmap(visibleBitmap, xoffset, yoffset, null);
+        }        
     }
     
     public Bitmap getVisibleBitmap() {
