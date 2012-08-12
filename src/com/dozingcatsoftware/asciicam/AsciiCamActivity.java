@@ -3,12 +3,8 @@
 package com.dozingcatsoftware.asciicam;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.io.Writer;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -22,11 +18,9 @@ import com.dozingcatsoftware.asciicam.R;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -59,6 +53,9 @@ public class AsciiCamActivity extends Activity
     boolean saveInProgress = false;
     boolean cameraViewReady = false;
     boolean appVisible = false;
+    
+    AsciiRenderer imageRenderer = new AsciiRenderer();
+    AsciiImageWriter imageWriter = new AsciiImageWriter();
     
     CameraPreviewProcessingQueue imageProcessor = new CameraPreviewProcessingQueue();
 
@@ -134,34 +131,21 @@ public class AsciiCamActivity extends Activity
         }
     }
     
-    static String thumbnailDirectory() {
-    	return BASE_PICTURE_DIR + File.separator + "thumbnails";
-    }
-
-    void takePictureThreadEntry(AsciiConverter.Result result) {
+    void takePictureThreadEntry(final AsciiConverter.Result result) {
         try {
-            String datestr = FILENAME_DATE_FORMAT.format(new Date());
-            String dir = BASE_PICTURE_DIR + File.separator + datestr;
-            // make sure image and thumbnail directories exist
-            (new File(dir)).mkdirs();
-            if (!((new File(dir)).isDirectory())) {
-                return;
-            }
-            final String pngPath = saveBitmap(overlayView.getVisibleBitmap(), dir, datestr);
+            final String pngPath = imageWriter.saveImageAndThumbnail(imageRenderer.getVisibleBitmap(), 
+                    imageRenderer.createThumbnailBitmap(result),
+                    new AsciiImageWriter.HtmlProvider() {
+                        public void writeHtml(Writer writer, String imageName) throws IOException {
+                            imageRenderer.writeHtml(result, writer, imageName);
+                        }
+                    }
+            );
             handler.post(new Runnable() {
                public void run() {
                    bitmapSaved(pngPath, "image/png");
                }
             });
-            
-            // TODO: this assumes that the HTML file will be created before the user shares it
-            String thumbnailDir = thumbnailDirectory();
-            (new File(thumbnailDir)).mkdirs();
-            // create .noindex file so thumbnail pictures won't be indexed and show up in the gallery app
-            (new File(thumbnailDir + File.separator + ".nomedia")).createNewFile();
-
-            String htmlPath = saveHTML(dir, datestr, result);
-            String thumbnailPath = saveThumbnail(thumbnailDirectory(), datestr, result);
         }
         catch(IOException ex) {
             Log.e("AsciiCam", "Error saving picture", ex);
@@ -192,7 +176,7 @@ public class AsciiCamActivity extends Activity
         saveInProgress = false;
         if (!appVisible) return;
         if (path==null) {
-            Toast.makeText(getApplicationContext(), getString(R.string.errorSavingPicture), Toast.LENGTH_SHORT);
+            Toast.makeText(getApplicationContext(), getString(R.string.errorSavingPicture), Toast.LENGTH_SHORT).show();
         }
         else {
             ViewImageActivity.startActivityWithImageURI(this, Uri.fromFile(new File(path)), mimeType);
@@ -219,7 +203,8 @@ public class AsciiCamActivity extends Activity
     }
     
     public void onClick_gotoGallery(View view) {
-        Intent intent = LibraryActivity.intentWithImageDirectory(this, BASE_PICTURE_DIR, thumbnailDirectory());
+        Intent intent = LibraryActivity.intentWithImageDirectory(this,
+                imageWriter.getBasePictureDirectory(), imageWriter.getThumbnailDirectory());
         startActivity(intent);
     }
     
@@ -233,77 +218,8 @@ public class AsciiCamActivity extends Activity
     
     public void onClick_switchCamera(View view) {
         arManager.switchToNextCamera();
-    }
+    }    
     
-    static DateFormat FILENAME_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
-    static String BASE_PICTURE_DIR = Environment.getExternalStorageDirectory() + File.separator + "AsciiCam";
-    
-    String saveHTML(String dir, String imageName, AsciiConverter.Result result) throws IOException {
-        String outputFilePath;
-        FileWriter output = null;
-        try {
-        	outputFilePath = dir + File.separator + imageName + ".html";
-            output = new FileWriter(outputFilePath);
-            output.write("<html><head></title>Ascii Picture " + imageName + "</title></head>");
-            output.write("<body><div style=\"background: black; letter-spacing: 3px;\">\n");
-
-            output.write("<pre>");
-            for(int r=0; r<result.rows; r++) {
-                int lastColor = -1;
-                // loop precondition: output is in the middle of a <span> tag.
-                // This allows skipping the tag if it's a space or the same color as previous char.
-                output.write("<span>");
-                for(int c=0; c<result.columns; c++) {
-                    String asciiChar = result.stringAtRowColumn(r, c);
-                    // don't use span tag for space
-                    if (" ".equals(asciiChar)) {
-                        output.write(asciiChar);
-                        continue;
-                    }
-                    int color = result.colorAtRowColumn(r, c);
-                    if (color==lastColor) {
-                        output.write(asciiChar);
-                        continue;
-                    }
-                    String htmlColor = Integer.toHexString(color & 0x00ffffff);
-                    while (htmlColor.length() < 6) {
-                        htmlColor = "0" + htmlColor;
-                    }
-                    lastColor = color;
-                    output.write(String.format("</span><span style=\"color:%s\">%s", htmlColor, asciiChar));
-                }
-                output.write("</span>\n");
-            }
-            output.write("</pre>\n");
-            output.write("</div></body></html>");
-            output.close();
-            
-        }
-        finally {
-            if (output!=null) output.close();
-        }
-        return outputFilePath;
-    }
-    
-    String saveThumbnail(String dir, String imageName, AsciiConverter.Result result) throws IOException {
-        Bitmap bitmap = overlayView.drawIntoThumbnailBitmap(result);
-        return saveBitmap(bitmap, dir, imageName);
-    }
-    
-    String saveBitmap(Bitmap bitmap, String dir, String imageName) throws IOException {
-        String outputFilePath;
-        FileOutputStream output = null;
-        try {
-            outputFilePath = dir + File.separator + imageName + ".png";
-            output = new FileOutputStream(outputFilePath);
-            bitmap.compress(Bitmap.CompressFormat.PNG, 0, output);
-            output.close();
-        }
-        finally {
-            if (output!=null) output.close();
-        }
-        return outputFilePath;
-    }
 
     @Override public void onPreviewFrame(byte[] data, Camera camera) {
         if (!saveInProgress) {
@@ -318,16 +234,18 @@ public class AsciiCamActivity extends Activity
     
     @Override public void processCameraImage(final byte[] data, final int width, final int height) {
         synchronized(pictureLock) {
-            overlayView.updateCameraPreviewSize(width, height);
+            imageRenderer.setMaximumImageSize(overlayView.getWidth(), overlayView.getHeight());
+            imageRenderer.setCameraImageSize(width, height);
             asciiConverter.computeResultForCameraData(data, width, height, 
-                    overlayView.asciiRows(), overlayView.asciiColumns(), 
+                    imageRenderer.asciiRows(), imageRenderer.asciiColumns(), 
                     colorType, pixelCharsMap.get(colorType), asciiResult);
+            overlayView.setBitmap(imageRenderer.createBitmap(asciiResult)); 
             overlayView.setFlipHorizontal(arManager.isCameraFrontFacing());
         }
         handler.post(new Runnable() {
            public void run() {
                CameraUtils.addPreviewCallbackBuffer(arManager.getCamera(), data);
-               overlayView.updateFromAsciiResult(asciiResult, width, height);
+               overlayView.invalidate();
            }
         });
     }
