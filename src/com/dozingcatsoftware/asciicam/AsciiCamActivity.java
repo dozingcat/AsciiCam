@@ -220,7 +220,6 @@ public class AsciiCamActivity extends Activity
         arManager.switchToNextCamera();
     }    
     
-
     @Override public void onPreviewFrame(byte[] data, Camera camera) {
         if (!saveInProgress) {
             Camera.Size size = camera.getParameters().getPreviewSize();
@@ -230,7 +229,6 @@ public class AsciiCamActivity extends Activity
             CameraUtils.addPreviewCallbackBuffer(camera, data);
         }
     }
-    
     
     @Override public void processCameraImage(final byte[] data, final int width, final int height) {
         synchronized(pictureLock) {

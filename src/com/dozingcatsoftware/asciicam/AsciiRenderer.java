@@ -180,5 +180,4 @@ public class AsciiRenderer {
         writer.write("</div></body></html>");
     }
 
-
 }

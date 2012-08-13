@@ -29,6 +29,14 @@
         <activity android:name="ViewImageActivity" android:screenOrientation="landscape"></activity>
         <activity android:name="AboutActivity"></activity>
         <activity android:name="AsciiCamPreferences"></activity>
+        
+        <receiver android:name="com.dozingcatsoftware.asciicam.NewPictureReceiver" android:label="NewPictureReceiver">
+           <intent-filter>
+                <action android:name="android.hardware.action.NEW_PICTURE" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </receiver>
+        
     </application>
 
 </manifest>
