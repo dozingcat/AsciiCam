@@ -43,6 +43,7 @@ public class AsciiCamActivity extends Activity
     
     Object pictureLock = new Object();
     final static int ACTIVITY_PREFERENCES = 1;
+    final static int ACTIVITY_PICK_IMAGE = 2;
     
     ImageButton cycleColorButton;
     ShutterButton shutterButton;
@@ -121,12 +122,33 @@ public class AsciiCamActivity extends Activity
     	editor.commit();
     }
     
-    @Override protected void onActivityResult(int requestCode, int resultCode, Intent intent) { 
+    @Override protected void onActivityResult(int requestCode, int resultCode, final Intent intent) { 
         super.onActivityResult(requestCode, resultCode, intent); 
 
         switch(requestCode) { 
             case ACTIVITY_PREFERENCES:
                 updateFromPreferences();
+                break;
+            case ACTIVITY_PICK_IMAGE:
+                if (resultCode==RESULT_OK) {
+                    (new Thread() {
+                        public void run() {
+                            try {
+                                final String imagePath = (new ProcessImageOperation()).
+                                        processImage(AsciiCamActivity.this, intent.getData());
+                                handler.post(new Runnable() {
+                                    public void run() {
+                                        ViewImageActivity.startActivityWithImageURI(AsciiCamActivity.this, 
+                                                Uri.fromFile(new File(imagePath)), "image/png");
+                                    }
+                                });
+                            }
+                            catch(Exception ex) {
+                                Log.e("ConvertImage", "Failed converting image", ex);
+                            }
+                        }
+                    }).start();
+                }
                 break;
         }
     }
@@ -218,7 +240,12 @@ public class AsciiCamActivity extends Activity
     
     public void onClick_switchCamera(View view) {
         arManager.switchToNextCamera();
-    }    
+    }
+    
+    public void onClick_convertPicture(View view) {
+        Intent i = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.INTERNAL_CONTENT_URI); 
+        startActivityForResult(i, ACTIVITY_PICK_IMAGE);         
+    }
     
     @Override public void onPreviewFrame(byte[] data, Camera camera) {
         if (!saveInProgress) {

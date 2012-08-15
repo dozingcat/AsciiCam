@@ -30,7 +30,8 @@
         <activity android:name="AboutActivity"></activity>
         <activity android:name="AsciiCamPreferences"></activity>
         
-        <receiver android:name="com.dozingcatsoftware.asciicam.NewPictureReceiver" android:label="NewPictureReceiver">
+        <receiver android:name="com.dozingcatsoftware.asciicam.NewPictureReceiver" android:label="NewPictureReceiver"
+            android:enabled="false">
            <intent-filter>
                 <action android:name="android.hardware.action.NEW_PICTURE" />
                 <data android:mimeType="image/*" />
