@@ -40,7 +40,9 @@ public class ProcessImageOperation {
         final AsciiRenderer renderer = new AsciiRenderer();
         renderer.setMaximumImageSize(displayWidth, displayHeight);
         
-        Bitmap bitmap = AndroidUtils.scaledBitmapFromURIWithMinimumSize(context, uri, 480, 320);
+        int minWidth = Math.max(2*renderer.asciiColumns(), 480);
+        int minHeight = Math.max(2*renderer.asciiRows(), 320);
+        Bitmap bitmap = AndroidUtils.scaledBitmapFromURIWithMinimumSize(context, uri, minWidth, minHeight);
         renderer.setCameraImageSize(bitmap.getWidth(), bitmap.getHeight());
         
         AsciiConverter converter = new AsciiConverter();
@@ -53,8 +55,6 @@ public class ProcessImageOperation {
                 new AsciiImageWriter.HtmlProvider() {
                     public void writeHtml(Writer writer, String imageName) throws IOException {
                         renderer.writeHtml(result, writer, imageName);
-                        // TODO Auto-generated method stub
-                        
                     }
                 }
         );

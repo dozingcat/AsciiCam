@@ -367,11 +367,16 @@ public class AsciiConverter {
         result.pixelChars = (pixelCharString!=null) ? 
                 toPixelCharArray(pixelCharString) : colorType.getDefaultPixelChars();
 
+        // TODO: read bitmap pixels into array for faster processing
+        int[] pixels = null;
         int asciiIndex = 0;
         for(int r=0; r<asciiRows; r++) {
             // compute grid of data pixels whose brightness and colors to average
             int ymin = bitmap.getHeight() * r / asciiRows;
             int ymax = bitmap.getHeight() * (r+1) / asciiRows;
+            // read all pixels for this row of characters
+            if (pixels==null) pixels = new int[(ymax-ymin+1) * bitmap.getWidth()];
+            bitmap.getPixels(pixels, 0, bitmap.getWidth(), 0, ymin, bitmap.getWidth(), ymax-ymin);
             for(int c=0; c<asciiCols; c++) {
                 int xmin = bitmap.getWidth() * c / asciiCols;
                 int xmax = bitmap.getWidth() * (c+1) / asciiCols;
@@ -381,10 +386,12 @@ public class AsciiConverter {
                 int samples = 0;
            
                 for(int y=ymin; y<ymax; y++) {
+                    int poffset = (y-ymin)*bitmap.getWidth() + xmin;
                     for(int x=xmin; x<xmax; x++) {
                         samples++;
                         
-                        int color = bitmap.getPixel(x, y);
+                        int color = pixels[poffset++];
+                        //int color = bitmap.getPixel(x, y);
                         int red = (color >> 16) & 0xff;
                         int green = (color >> 8) & 0xff;
                         int blue = color & 0xff;
