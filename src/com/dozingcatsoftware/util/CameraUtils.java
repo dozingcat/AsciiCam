@@ -6,14 +6,11 @@ import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
 
-import android.app.Activity;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
-import android.util.Log;
-import android.view.OrientationEventListener;
-import android.view.Surface;
 
-/** This class contains useful methods for working with the camera in Android apps. The methods will build and run 
+/** 
+ * This class contains useful methods for working with the camera in Android apps. The methods will build and run 
  * under Android 1.6 or later; methods available only in later versions are called using reflection.
  */
 

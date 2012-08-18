@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android" android:installLocation="auto"
     package="com.dozingcatsoftware.asciicam"
-    android:versionCode="4"
-    android:versionName="1.0.3" >
+    android:versionCode="5"
+    android:versionName="1.1" >
 
     <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="14" />
     <uses-permission android:name="android.permission.CAMERA"/>
@@ -34,6 +34,14 @@
             android:enabled="false">
            <intent-filter>
                 <action android:name="android.hardware.action.NEW_PICTURE" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </receiver>
+        
+        <receiver android:name="com.dozingcatsoftware.asciicam.NewPictureReceiverLegacyBroadcast" android:label="NewPictureReceiverLegacyBroadcast"
+            android:enabled="false">
+           <intent-filter>
+                <action android:name="com.android.camera.NEW_PICTURE" />
                 <data android:mimeType="image/*" />
             </intent-filter>
         </receiver>

@@ -7,5 +7,8 @@
             android:title="@string/ansiColorPixelCharsPrefTitle" android:dialogMessage="@string/ansiColorPixelCharsPrefMessage" />
         <EditTextPreference android:key="@string/fullColorPixelCharsPrefId" android:enabled="true" 
             android:title="@string/fullColorPixelCharsPrefTitle" android:dialogMessage="@string/fullColorPixelCharsPrefMessage" />
-	</PreferenceCategory>
+        
+        <CheckBoxPreference android:key="@string/autoConvertPicturesPrefId" android:enabled="true" 
+            android:title="@string/autoConvertPicturesPrefTitle" />
+   	</PreferenceCategory>
 </PreferenceScreen>

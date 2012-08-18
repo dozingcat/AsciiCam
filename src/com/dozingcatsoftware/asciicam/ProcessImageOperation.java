@@ -1,6 +1,5 @@
 package com.dozingcatsoftware.asciicam;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Writer;
 
@@ -17,7 +16,11 @@ import android.view.WindowManager;
 
 public class ProcessImageOperation {
 
-    String processImage(Context context, Uri uri) throws IOException {
+    /**
+     * Reads the image from the given URI, creates ASCII PNG and HTML files, and writes them to
+     * a new directory under the AsciiCam directory in /sdcard. Returns the path to the PNG file.
+     */
+    public String processImage(Context context, Uri uri) throws IOException {
         // use current settings from preferences
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         ColorType colorType = ColorType.ANSI_COLOR;

@@ -114,6 +114,7 @@ public class AsciiCamActivity extends Activity
         if (colorType==null) {
         	colorType = AsciiConverter.ColorType.ANSI_COLOR;
         }
+        AsciiCamPreferences.setAutoConvertEnabled(this, prefs.getBoolean(getString(R.string.autoConvertPicturesPrefId), false));
     }
     
     void saveColorStyleToPreferences() {
@@ -264,7 +265,9 @@ public class AsciiCamActivity extends Activity
             asciiConverter.computeResultForCameraData(data, width, height, 
                     imageRenderer.asciiRows(), imageRenderer.asciiColumns(), 
                     colorType, pixelCharsMap.get(colorType), asciiResult);
-            overlayView.setBitmap(imageRenderer.createBitmap(asciiResult)); 
+            overlayView.setBitmap(imageRenderer.createBitmap(asciiResult));
+            // When using a front-facing camera, the displayed image needs to be mirrored;
+            // otherwise it will appear upside down in portrait orientation.
             overlayView.setFlipHorizontal(arManager.isCameraFrontFacing());
         }
         handler.post(new Runnable() {

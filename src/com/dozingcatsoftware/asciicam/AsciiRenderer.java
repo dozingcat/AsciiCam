@@ -7,6 +7,9 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 
+/**
+ * Creates Bitmaps and HTML from AsciiConverter.Result objects.
+ */
 public class AsciiRenderer {
     
     Paint paint = new Paint();

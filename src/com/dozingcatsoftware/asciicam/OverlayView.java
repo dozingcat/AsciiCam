@@ -9,8 +9,7 @@ import android.graphics.Matrix;
 import android.util.AttributeSet;
 import android.view.View;
 
-/** View which displays the ASCII image computed from the camera preview.
- */
+/** View which displays the ASCII image computed from the camera preview. */
 public class OverlayView extends View {
 
     public OverlayView(Context context, AttributeSet attrs) {

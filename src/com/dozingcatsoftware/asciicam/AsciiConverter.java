@@ -12,12 +12,10 @@ import java.util.concurrent.FutureTask;
 
 import android.graphics.Bitmap;
 
-/** This class converts pixel data received from the camera into ASCII characters using brightness
+/** 
+ * This class converts pixel data received from the camera into ASCII characters using brightness
  * and color information. 
- * @author brian
- *
  */
-
 public class AsciiConverter {
     
     static final boolean DEBUG = false;

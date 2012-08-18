@@ -12,6 +12,9 @@ import java.util.Date;
 import android.graphics.Bitmap;
 import android.os.Environment;
 
+/**
+ * Writes bitmaps and HTML to directories on the external storage directory.
+ */
 public class AsciiImageWriter {
     
     public interface HtmlProvider {

@@ -16,7 +16,6 @@ import com.dozingcatsoftware.util.ScaledBitmapCache;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -26,7 +25,8 @@ import android.widget.ImageView;
 import android.widget.SimpleAdapter;
 import android.widget.AdapterView.OnItemClickListener;
 
-/** Activity which displays all pictures the user has taken in a scrolling grid. Selecting an image opens it
+/** 
+ * Activity which displays all pictures the user has taken in a scrolling grid. Selecting an image opens it
  * in a ViewImageActivity.
  */
 public class LibraryActivity extends Activity {

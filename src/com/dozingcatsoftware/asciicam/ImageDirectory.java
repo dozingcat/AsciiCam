@@ -6,7 +6,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Represents a directory where the PNG and HTML versions of saved pictures are stored.
+/** 
+ * Represents a directory where the PNG and HTML versions of saved pictures are stored.
  */
 public class ImageDirectory {
     
