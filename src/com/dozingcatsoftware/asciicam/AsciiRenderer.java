@@ -154,7 +154,8 @@ public class AsciiRenderer {
 
         writer.write("<pre>");
         for(int r=0; r<result.rows; r++) {
-            int lastColor = -1;
+            boolean hasSetColor = false;
+            int lastColor = 0;
             // loop precondition: output is in the middle of a <span> tag.
             // This allows skipping the tag if it's a space or the same color as previous char.
             writer.write("<span>");
@@ -166,7 +167,7 @@ public class AsciiRenderer {
                     continue;
                 }
                 int color = result.colorAtRowColumn(r, c);
-                if (color==lastColor) {
+                if (hasSetColor && color==lastColor) {
                     writer.write(asciiChar);
                     continue;
                 }
@@ -175,6 +176,7 @@ public class AsciiRenderer {
                     htmlColor = "0" + htmlColor;
                 }
                 lastColor = color;
+                hasSetColor = true;
                 writer.write(String.format("</span><span style=\"color:%s\">%s", htmlColor, asciiChar));
             }
             writer.write("</span>\n");
