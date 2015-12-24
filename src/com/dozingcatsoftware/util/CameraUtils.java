@@ -9,13 +9,13 @@ import java.util.List;
 import android.graphics.Bitmap;
 import android.hardware.Camera;
 
-/** 
- * This class contains useful methods for working with the camera in Android apps. The methods will build and run 
+/**
+ * This class contains useful methods for working with the camera in Android apps. The methods will build and run
  * under Android 1.6 or later; methods available only in later versions are called using reflection.
  */
 
 public class CameraUtils {
-    
+
     /** Returns the number of cameras accessible to the Android API. This is always 1 on platforms earlier than Android 2.3,
      * and on 2.3 or later it is the result of Camera.getNumberOfCameras().
      */
@@ -48,7 +48,7 @@ public class CameraUtils {
     public static Camera.Size bestCameraSizeForWidthAndHeight(Camera.Parameters params, int width, int height) {
         List<Camera.Size> previewSizes = previewSizesForCameraParameters(params);
         if (previewSizes==null || previewSizes.size()==0) return null;
-        
+
         Camera.Size bestSize = null;
         int bestDiff = 0;
         // find the preview size that minimizes the difference between width and height
@@ -61,7 +61,7 @@ public class CameraUtils {
         }
         return bestSize;
     }
-    
+
     /** Updates the Camera object's preview size to the nearest match for the given width and height.
      * Returns the preview size whether it was updated or not.
      */
@@ -74,7 +74,7 @@ public class CameraUtils {
         }
         return params.getPreviewSize();
     }
-    
+
     /** Returns a list of available camera picture sizes, or null if the Android API to get the sizes is not available.
      */
     public static List<Camera.Size> pictureSizesForCameraParameters(Camera.Parameters params) {
@@ -86,7 +86,7 @@ public class CameraUtils {
             return null;
         }
     }
-    
+
     /** Sets the camera's picture size to the maximum available size, as determined by number of pixels (width*height).
      * Returns a Camera.Size object containing the updated picture size.
      */
@@ -108,10 +108,10 @@ public class CameraUtils {
                 camera.setParameters(params);
             }
         }
-        
+
         return params.getPictureSize();
     }
-    
+
     /** Sets pixels in the given bitmap to a grayscale image from the byte array from a camera preview,
      * assumed to be in YUV (NV21) format with brightness pixels first.
      */
@@ -125,7 +125,7 @@ public class CameraUtils {
         return bitmap;
     }
 
-    /** Opens the camera with the given ID. If the Android API doesn't support multiple cameras (i.e. prior to Android 2.3), 
+    /** Opens the camera with the given ID. If the Android API doesn't support multiple cameras (i.e. prior to Android 2.3),
      * always opens the primary camera.
      */
     public static Camera openCamera(int cameraId) {
@@ -146,11 +146,11 @@ public class CameraUtils {
         }
         return Camera.open();
     }
-    
-    static Class BYTE_ARRAY_CLASS = (new byte[0]).getClass();
+
+    static Class<? extends byte[]> BYTE_ARRAY_CLASS = (new byte[0]).getClass();
     static Method addPreviewBufferMethod;
     static Method setPreviewCallbackWithBufferMethod;
-    
+
     static {
         try {
             addPreviewBufferMethod = Camera.class.getMethod("addCallbackBuffer", BYTE_ARRAY_CLASS);
@@ -160,20 +160,20 @@ public class CameraUtils {
             addPreviewBufferMethod = setPreviewCallbackWithBufferMethod = null;
         }
     }
-    
+
     /** Returns true if the Camera.addCallbackBuffer API is available (i.e. Android 2.2 or later).
      */
     public static boolean previewBuffersSupported() {
         return addPreviewBufferMethod!=null;
     }
-    
+
     /** Attempts to allocate and register the given number of preview callback buffers. Uses the camera's current preview
      * size to determine the size of the buffers. If the Android API doesn't support preview buffers, does nothing.
      * Returns true if successful.
      */
     public static boolean createPreviewCallbackBuffers(Camera camera, int nbuffers) {
         if (addPreviewBufferMethod==null) return false;
-        
+
         Camera.Size previewSize = camera.getParameters().getPreviewSize();
         // 12 bits per pixel for preview buffer (8 luminance bits, then average of 2 bits each for Cr and Cb)
         int bufferSize = previewSize.width * previewSize.height * 3 / 2;
@@ -188,7 +188,7 @@ public class CameraUtils {
         }
         return true;
     }
-    
+
     /** Attempts to add the given byte array as a camera preview callback buffer. If the Android API doesn't support preview buffers,
      * does nothing and returns false. Returns true if successful.
      */
@@ -202,7 +202,7 @@ public class CameraUtils {
             return false;
         }
     }
-    
+
     /** Sets the given callback object on the given camera. Calls setPreviewCallbackWithBuffer if the Android API supports it,
      * otherwise calls setPreviewCallback.
      */
@@ -234,7 +234,7 @@ public class CameraUtils {
         catch(Exception ignored) {}
         return Collections.singletonList("off");
     }
-    
+
     public static String getCurrentFlashMode(Camera camera) {
         Camera.Parameters params = camera.getParameters();
         try {
@@ -260,42 +260,52 @@ public class CameraUtils {
             return false;
         }
     }
-    
+
     /** Returns true if the camera supports flash. */
     public static boolean cameraSupportsFlash(Camera camera) {
         return getFlashModes(camera).contains("on");
     }
-    
+
     /** Returns true if the camera supports auto-flash mode. */
     public static boolean cameraSupportsAutoFlash(Camera camera) {
         return getFlashModes(camera).contains("auto");
     }
-    
+
     /** Returns true if the camera supports torch mode (flash always on). */
     public static boolean cameraSupportsTorch(Camera camera) {
         return getFlashModes(camera).contains("torch");
     }
-    
+
     public static boolean cameraInTorchMode(Camera camera) {
     	return "torch".equals(getCurrentFlashMode(camera));
     }
-    
-    
+
+
     /** Exists for compatibility with Android versions before 2.3 that don't have Camera.CameraInfo. */
-    static class CameraInfo {
+    public static class CameraInfo {
         public static final int CAMERA_FACING_BACK = 0;
         public static final int CAMERA_FACING_FRONT = 1;
-        
+
         public int orientation;
         public int facing;
+
+        public boolean isFrontFacing() {
+            return facing == CAMERA_FACING_FRONT;
+        }
+
+        public boolean isRotated180Degrees() {
+            // See https://stackoverflow.com/questions/33902832/upside-down-camera-preview-byte-array and
+            // https://www.reddit.com/r/Android/comments/3rjbo8/nexus5x_marshmallow_camera_problem/cwqzqgh
+            return (isFrontFacing() && orientation == 90) || (!isFrontFacing() && orientation == 270);
+        }
     }
 
     /** Returns the result of Camera.getCameraInfo(cameraId) as a CameraUtils.CameraInfo object,
      * which has the same fields as android.hardware.Camera.CameraInfo.
      */
-    static CameraInfo getCameraInfo(int cameraId) {
+    public static CameraInfo getCameraInfo(int cameraId) {
         try {
-            Class cameraInfoClass = Class.forName("android.hardware.Camera$CameraInfo");
+            Class<?> cameraInfoClass = Class.forName("android.hardware.Camera$CameraInfo");
             Object cameraInfo = cameraInfoClass.newInstance();
             Method getCameraId = Camera.class.getMethod("getCameraInfo", int.class, cameraInfoClass);
             getCameraId.invoke(null, cameraId, cameraInfo);
@@ -308,7 +318,7 @@ public class CameraUtils {
             return new CameraInfo();
         }
     }
-    
+
     /** Returns true if the camera is front-facing. */
     public static boolean cameraIsFrontFacing(int cameraId) {
         return getCameraInfo(cameraId).facing == CameraInfo.CAMERA_FACING_FRONT;

@@ -11,24 +11,24 @@ import android.graphics.Paint;
  * Creates Bitmaps and HTML from AsciiConverter.Result objects.
  */
 public class AsciiRenderer {
-    
+
     Paint paint = new Paint();
-    
+
     int charPixelHeight = 9;
     int charPixelWidth = 7;
     int textSize = 10;
-    
+
     // Bitmaps are drawn offscreen in a separate thread into offscreenBitmap. When finished, the reference
     // is assigned to visibleBitmap which is drawn to the screen.
     Bitmap[] bitmaps = new Bitmap[2];
     int activeBitmapIndex;
     Bitmap offscreenBitmap;
-    
+
     int maxWidth;
     int maxHeight;
     int outputImageWidth;
     int outputImageHeight;
-    
+
     public Bitmap getVisibleBitmap() {
         return bitmaps[activeBitmapIndex];
     }
@@ -36,16 +36,16 @@ public class AsciiRenderer {
     public int getCharPixelHeight() {
         return charPixelHeight;
     }
-    
+
     public int getCharPixelWidth() {
         return charPixelWidth;
     }
-    
+
     public void setMaximumImageSize(int maxWidth, int maxHeight) {
         this.maxWidth = maxWidth;
         this.maxHeight = maxHeight;
     }
-    
+
     public void setCameraImageSize(int width, int height) {
         float cameraRatio = ((float)width) / height;
         float viewRatio = ((float)this.maxWidth) / this.maxHeight;
@@ -58,22 +58,26 @@ public class AsciiRenderer {
             this.outputImageWidth = this.maxWidth;
             this.outputImageHeight = (int)(this.maxWidth / cameraRatio);
         }
+        // Scale 10 point text per 1000px width. Char width is 70% of text size and height is 90%.
+        textSize = (int) Math.round(Math.max(10, outputImageWidth / 100.0));
+        charPixelWidth = (int) (textSize * 0.7);
+        charPixelHeight = (int) (textSize * 0.9);
     }
-    
+
     public int getOutputImageWidth() {
         return this.outputImageWidth;
     }
     public int getOutputImageHeight() {
         return this.outputImageHeight;
     }
-    
+
     public int asciiColumnsForWidth(int width) {
         return width / getCharPixelWidth();
     }
     public int asciiRowsForHeight(int height) {
         return height / getCharPixelHeight();
     }
-    
+
     public int asciiRows() {
         return asciiRowsForHeight(this.outputImageHeight);
     }
@@ -99,11 +103,11 @@ public class AsciiRenderer {
             }
         }
     }
-    
+
     public Bitmap createBitmap(AsciiConverter.Result result) {
         int nextIndex = (activeBitmapIndex + 1) % bitmaps.length;
         if (bitmaps[nextIndex]==null ||
-                bitmaps[nextIndex].getWidth()!=outputImageWidth || 
+                bitmaps[nextIndex].getWidth()!=outputImageWidth ||
                 bitmaps[nextIndex].getHeight()!=outputImageHeight) {
             bitmaps[nextIndex] = Bitmap.createBitmap(outputImageWidth, outputImageHeight, Bitmap.Config.ARGB_8888);
         }
@@ -111,7 +115,7 @@ public class AsciiRenderer {
         activeBitmapIndex = nextIndex;
         return bitmaps[activeBitmapIndex];
     }
-    
+
     // For thumbnails, create image one-fourth normal size, use every other row and column, and draw solid rectangles
     // instead of text because text won't scale down well for gallery view.
     public Bitmap createThumbnailBitmap(AsciiConverter.Result result) {
@@ -126,11 +130,11 @@ public class AsciiRenderer {
         canvas.drawARGB(255, 0, 0, 0);
         if (result!=null) {
             for(int r=0; r<result.rows; r+=2) {
-                int ymin = (int)(height*r / result.rows);
-                int ymax = (int)(height*(r+2) / result.rows);
+                int ymin = height*r / result.rows;
+                int ymax = height*(r+2) / result.rows;
                 for(int c=0; c<result.columns; c+=2) {
-                    int xmin = (int)(width*c / result.columns);
-                    int xmax = (int)(width*(c+2) / result.columns);
+                    int xmin = width*c / result.columns;
+                    int xmax = width*(c+2) / result.columns;
                     float ratio = result.brightnessRatioAtRowColumn(r, c);
                     paint.setColor(result.colorAtRowColumn(r, c));
                     // for full color, always draw larger rectangle because colors will be darker
