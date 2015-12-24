@@ -102,7 +102,6 @@
                 android:src="@drawable/ic_switch_photo_facing_holo_light" />
 
             <LinearLayout
-                android:id="@+id/verticalButtonBar"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:gravity="bottom"

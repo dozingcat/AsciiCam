@@ -428,9 +428,11 @@ public class AsciiConverter {
                 }
                 int averageBright = totalBright / samples;
                 result.asciiIndexes[asciiIndex] = (averageBright * result.pixelChars.length) / 256;
-                if (asciiIndex%50==0) {
-                    android.util.Log.i("color", String.format("%d %d %d %d",
-                            averageBright, samples, result.pixelChars.length, result.asciiIndexes[asciiIndex]));
+                if (DEBUG) {
+                    if (asciiIndex%50==0) {
+                        android.util.Log.i("color", String.format("%d %d %d %d",
+                                averageBright, samples, result.pixelChars.length, result.asciiIndexes[asciiIndex]));
+                    }
                 }
 
                 if (colorType!=ColorType.NONE) {

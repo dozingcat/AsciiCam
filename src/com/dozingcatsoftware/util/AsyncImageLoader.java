@@ -12,14 +12,14 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.widget.ImageView;
 
-/** 
+/**
  * Class to handle assigning a bitmap to a view, when the bitmap may need to be loaded from
- * storage asynchronously. 
- * 
+ * storage asynchronously.
+ *
  * This code is based on the sample code at http://developer.android.com/training/displaying-bitmaps/index.html
  */
 public class AsyncImageLoader {
-    
+
     static class BitmapWorkerTask extends AsyncTask<Uri, Void, Bitmap> {
         WeakReference<ImageView> imageViewReference;
         Uri data = null;
@@ -29,7 +29,7 @@ public class AsyncImageLoader {
 
         public BitmapWorkerTask(ImageView imageView, ScaledBitmapCache bitmapCache, int width, int height) {
             // Use a WeakReference to ensure the ImageView can be garbage collected
-            imageViewReference = new WeakReference(imageView);
+            imageViewReference = new WeakReference<ImageView>(imageView);
             this.bitmapCache = bitmapCache;
             this.width = width;
             this.height = height;
@@ -50,7 +50,7 @@ public class AsyncImageLoader {
                 }
             }
         }
-        
+
         private static BitmapWorkerTask getBitmapWorkerTask(ImageView imageView) {
             if (imageView != null) {
                 final Drawable drawable = imageView.getDrawable();
@@ -70,7 +70,7 @@ public class AsyncImageLoader {
                 if (!uri.equals(taskUri)) {
                     // Cancel previous task
                     bitmapWorkerTask.cancel(true);
-                } 
+                }
                 else {
                     // The same work is already in progress
                     return false;
@@ -84,23 +84,23 @@ public class AsyncImageLoader {
     static class AsyncDrawable extends BitmapDrawable {
         private final WeakReference<BitmapWorkerTask> bitmapWorkerTaskReference;
 
-        public AsyncDrawable(Resources res, AsyncTask bitmapWorkerTask) {
+        public AsyncDrawable(Resources res, BitmapWorkerTask bitmapWorkerTask) {
             super(res, (Bitmap)null);
-            bitmapWorkerTaskReference = new WeakReference(bitmapWorkerTask);
+            bitmapWorkerTaskReference = new WeakReference<BitmapWorkerTask>(bitmapWorkerTask);
         }
 
         public BitmapWorkerTask getBitmapWorkerTask() {
             return bitmapWorkerTaskReference.get();
         }
     }
-    
+
     /**
      * Sets the bitmap of an ImageView, loading the bitmap using a background AsyncTask if needed.
      * If the image URI is found in-memory in the ScaledBitmapCache, assigns it directly to the
      * ImageView and returns. Otherwise, creates an AsyncTask in which the ScaledBitmapCache reads
      * the bitmap from secondary storage and assigns it to the ImageView when loaded.
      */
-    public void loadImageIntoViewAsync(final ScaledBitmapCache bitmapCache, Uri imageUri, ImageView imageView, 
+    public void loadImageIntoViewAsync(final ScaledBitmapCache bitmapCache, Uri imageUri, ImageView imageView,
             final int width, final int height, Resources resources) {
         // check in-memory cache, if found no need for an AsyncTask
         Bitmap bitmap = bitmapCache.getInMemoryScaledBitmap(imageUri, width, height);

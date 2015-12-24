@@ -31,6 +31,7 @@ public class CameraUtils {
 
     /** Returns a list of available camera preview sizes, or null if the Android API to get the sizes is not available.
      */
+    @SuppressWarnings("unchecked")
     public static List<Camera.Size> previewSizesForCameraParameters(Camera.Parameters params) {
         try {
             Method m = params.getClass().getMethod("getSupportedPreviewSizes");
@@ -77,6 +78,7 @@ public class CameraUtils {
 
     /** Returns a list of available camera picture sizes, or null if the Android API to get the sizes is not available.
      */
+    @SuppressWarnings("unchecked")
     public static List<Camera.Size> pictureSizesForCameraParameters(Camera.Parameters params) {
         try {
             Method m = params.getClass().getMethod("getSupportedPictureSizes");
@@ -228,6 +230,7 @@ public class CameraUtils {
         Camera.Parameters params = camera.getParameters();
         try {
             Method flashModesMethod = params.getClass().getMethod("getSupportedFlashModes");
+            @SuppressWarnings("unchecked")
             List<String> result = (List<String>)flashModesMethod.invoke(params);
             if (result!=null) return result;
         }
