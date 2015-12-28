@@ -117,3 +117,47 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorN
     (*env)->ReleaseIntArrayElements(env, jasciiOutput, asciiOutput, 0);
     (*env)->ReleaseIntArrayElements(env, jcolorOutput, colorOutput, 0);
 }
+
+
+/**
+ * jpixels: array to fill with color values.
+ * asciiValues: indexes of ASCII characters in the row.
+ * colorValues: color values of characters in the row.
+ * charsBitmap: array of pixels (grayscale) from a bitmap of each possible character.
+ *     Width is (numValues * charWidth) and height is charHeight.
+ */
+void Java_com_dozingcatsoftware_asciicam_AsciiRenderer_fillPixelsInRowNative(
+		JNIEnv* env, jobject thiz,
+		jintArray jrowPixels, jint numRowPixels,
+		jintArray jasciiValues, jintArray jcolorValues, jint numValues,
+		jbyteArray jcharsBitmap, jint charWidth, jint charHeight, jint numChars) {
+	jint *rowPixels = (*env)->GetIntArrayElements(env, jrowPixels, 0);
+	jint *asciiValues = (*env)->GetIntArrayElements(env, jasciiValues, 0);
+	jint *colorValues = (*env)->GetIntArrayElements(env, jcolorValues, 0);
+	jbyte *charsBitmap = (*env)->GetByteArrayElements(env, jcharsBitmap, 0);
+
+	int offset = 0;
+	int pixelsPerRow = numValues * charWidth;
+	// For each row of pixels:
+	for (int y=0; y<charHeight; y++) {
+		// For each character to draw:
+		for (int charPosition=0; charPosition<numChars; charPosition++) {
+			jint charValue = asciiValues[charPosition];
+			jint charColor = colorValues[charPosition];
+			// Index into the chars bitmap, going "down" the number of rows,
+			// and "across" the amount of character widths given by the index.
+			int charBitmapOffset = y*pixelsPerRow + charValue*charWidth;
+			// And now just copy charWidth pixels to the output, using the
+			// specified color if the brightness is >0, otherwise black.
+			for (int i=0; i<charWidth; i++) {
+				jbyte bitmapValue = charsBitmap[charBitmapOffset++];
+				rowPixels[offset++] = (bitmapValue) ? charColor : 0xff000000;
+			}
+		}
+	}
+
+	(*env)->ReleaseIntArrayElements(env, jrowPixels, rowPixels, 0);
+	(*env)->ReleaseIntArrayElements(env, jasciiValues, asciiValues, 0);
+	(*env)->ReleaseIntArrayElements(env, jcolorValues, colorValues, 0);
+	(*env)->ReleaseByteArrayElements(env, jcharsBitmap, charsBitmap, 0);
+}

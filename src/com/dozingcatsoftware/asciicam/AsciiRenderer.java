@@ -2,6 +2,11 @@ package com.dozingcatsoftware.asciicam;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -12,17 +17,102 @@ import android.graphics.Paint;
  */
 public class AsciiRenderer {
 
+    private static final boolean DEBUG = false;
+
     Paint paint = new Paint();
 
     int charPixelHeight = 9;
     int charPixelWidth = 7;
     int textSize = 10;
 
-    // Bitmaps are drawn offscreen in a separate thread into offscreenBitmap. When finished, the reference
-    // is assigned to visibleBitmap which is drawn to the screen.
+    // One element of this array holds the visible bitmap. The next image is drawn offscreen into
+    // the other element, and then activeBitmapIndex is flipped to make it visible.
     Bitmap[] bitmaps = new Bitmap[2];
     int activeBitmapIndex;
-    Bitmap offscreenBitmap;
+
+    // When rendering an ASCII image, we draw color values directly into an int array a row at a
+    // time. We use a bitmap containing the possible characters and copy slices from it. This is
+    // faster than Canvas.drawText.
+    // We store some temporary objects used to fill the bitmap pixels between requests,
+    // so we can avoid allocating new objects when possible. See drawIntoBitmap().
+    Bitmap possibleCharsBitmap;
+    int[] possibleCharsBitmapPixels;
+    byte[] possibleCharsGrayscale;
+
+    class Worker implements Callable<Long> {
+        int startRow, endRow;
+        int charPixelWidth, charPixelHeight;
+        AsciiConverter.Result result;
+        byte[] possibleCharsGrayscale;
+        Bitmap outputBitmap;
+
+        int[] rowAsciiValues;
+        int[] rowColorValues;
+        int[] renderedRowPixels;
+
+        void init(int workerId, int numWorkers,
+                AsciiConverter.Result result,
+                int charPixelWidth, int charPixelHeight, byte[] possibleCharsGrayscale,
+                Bitmap outputBitmap) {
+            this.startRow = result.rows * workerId / numWorkers;
+            this.endRow = result.rows * (workerId + 1) / numWorkers;
+            this.charPixelWidth = charPixelWidth;
+            this.charPixelHeight = charPixelHeight;
+            this.result = result;
+            this.possibleCharsGrayscale = possibleCharsGrayscale;
+            this.outputBitmap = outputBitmap;
+
+            int pixelArraySize = charPixelWidth * charPixelHeight * result.columns;
+            if (renderedRowPixels == null || renderedRowPixels.length != pixelArraySize) {
+                renderedRowPixels = new int[pixelArraySize];
+            }
+            if (rowAsciiValues == null || rowAsciiValues.length != result.columns) {
+                rowAsciiValues = new int[result.columns];
+            }
+            if (rowColorValues == null || rowColorValues.length != result.columns) {
+                rowColorValues = new int[result.columns];
+            }
+        }
+
+        // Returns time in nanoseconds to execute.
+        @Override public Long call() throws Exception {
+            long t1 = System.nanoTime();
+
+            int pixelsPerRow = charPixelWidth * result.columns;
+            for (int row=startRow; row<endRow; row++) {
+                for (int col=0; col<result.columns; col++) {
+                    rowAsciiValues[col] = result.asciiIndexAtRowColumn(row, col);
+                    rowColorValues[col] = result.colorAtRowColumn(row, col);
+                }
+
+                if (nativeCodeAvailable) {
+                    fillPixelsInRowNative(renderedRowPixels, renderedRowPixels.length,
+                            rowAsciiValues, rowColorValues, rowAsciiValues.length,
+                            possibleCharsGrayscale, charPixelWidth, charPixelHeight, result.columns);
+                }
+                else {
+                    fillPixelsInRow(renderedRowPixels, renderedRowPixels.length,
+                            rowAsciiValues, rowColorValues, rowAsciiValues.length,
+                            possibleCharsGrayscale, charPixelWidth, charPixelHeight, result.columns);
+                }
+                int y = charPixelHeight * row;
+                outputBitmap.setPixels(renderedRowPixels, 0, pixelsPerRow, 0, y, pixelsPerRow, charPixelHeight);
+            }
+            return System.nanoTime() - t1;
+        }
+    }
+
+    ExecutorService threadPool;
+    List<Worker> renderWorkers;
+
+    static boolean nativeCodeAvailable = false;
+    static {
+        try {
+            System.loadLibrary("asciiart");
+            nativeCodeAvailable = true;
+        }
+        catch(Throwable ignored) {}
+    }
 
     int maxWidth;
     int maxHeight;
@@ -85,14 +175,31 @@ public class AsciiRenderer {
         return asciiColumnsForWidth(this.outputImageWidth);
     }
 
-    public void drawIntoCanvas(AsciiConverter.Result result, Canvas canvas) {
-        canvas.drawARGB(255, 0, 0, 0);
+    void initRenderThreadPool(int numThreads) {
+        if (threadPool!=null) {
+            threadPool.shutdown();
+        }
+        if (numThreads<=0) numThreads = Runtime.getRuntime().availableProcessors();
+        threadPool = Executors.newFixedThreadPool(numThreads);
+        renderWorkers = new ArrayList<Worker>();
+        for(int i=0; i<numThreads; i++) {
+            renderWorkers.add(new Worker());
+        }
+    }
+
+    private void drawIntoBitmap(AsciiConverter.Result result, Bitmap bitmap) {
         paint.setARGB(255, 255, 255, 255);
 
+        long t1 = System.nanoTime();
+        // Directly drawing characters into the bitmap takes ~210ms on a Nexus 5x, and worse on a
+        // Nexus 7. This results in a very choppy display.
+        /*
+        Canvas canvas = new Canvas(bitmap);
+        canvas.drawARGB(255, 0, 0, 0);
         paint.setTextSize(textSize);
         if (result!=null) {
             for(int r=0; r<result.rows; r++) {
-                int y = charPixelHeight * (r+1);
+                int y = charPixelHeight * (r+1);  // Because drawText uses baseline. Should be -1?
                 int x = 0;
                 for(int c=0; c<result.columns; c++) {
                     String s = result.stringAtRowColumn(r, c);
@@ -102,7 +209,104 @@ public class AsciiRenderer {
                 }
             }
         }
+        */
+
+        // Instead, we directly generate the pixels a row of text at a time. We create a "template"
+        // bitmap into which we draw one copy of each character that we might need, and convert
+        // that to a flattened grayscale array. (Currently we only care whether the pixel has a
+        // nonzero brightness, so no anti-aliasing support). Then for each character we want to
+        // draw to the output image, we copy the corresponding pixels from the template bitmap.
+        // (Setting the output image pixel to the color determined by AsciiCoverter if nonblack).
+        //
+        // This isn't much faster in Java (190ms on a Nexus 5x), but when implemented in C with
+        // JNI, it drops to 55ms for an almost 4x performance increase on a single thread.
+        // With 6 threads (as reported by Runtime.getAvailableProcessors), it's 20-25ms.
+
+        // Create a bitmap containing each character that we might need to render. We could try to
+        // skip this step if (as is usually the case) the characters are the same as the previous
+        // frame, but in practice there's only a few characters and it takes almost no time.
+        int pixelsPerRow = charPixelWidth * result.columns;
+        if (possibleCharsBitmap == null ||
+                possibleCharsBitmap.getWidth() != pixelsPerRow ||
+                possibleCharsBitmap.getHeight() != charPixelHeight) {
+            possibleCharsBitmap = Bitmap.createBitmap(pixelsPerRow, charPixelHeight, Bitmap.Config.ARGB_8888);
+        }
+        Canvas charsBitmapCanvas = new Canvas(possibleCharsBitmap);
+        charsBitmapCanvas.drawARGB(255, 0, 0, 0);
+        paint.setTextSize(textSize);
+        paint.setColor(0xffffffff);
+        for (int i=0; i<result.pixelChars.length; i++) {
+            charsBitmapCanvas.drawText(result.pixelChars[i], charPixelWidth*i, charPixelHeight, paint);
+        }
+
+        // Extract brightness bytes from the bitmap and flatten to a 1d array.
+        int numCharsBitmapPixels = possibleCharsBitmap.getWidth() * possibleCharsBitmap.getHeight();
+        if (possibleCharsBitmapPixels == null ||
+                possibleCharsBitmapPixels.length != numCharsBitmapPixels) {
+            possibleCharsBitmapPixels = new int[numCharsBitmapPixels];
+            possibleCharsGrayscale = new byte[numCharsBitmapPixels];
+        }
+
+        possibleCharsBitmap.getPixels(possibleCharsBitmapPixels,
+                0, possibleCharsBitmap.getWidth(), 0, 0,
+                possibleCharsBitmap.getWidth(), possibleCharsBitmap.getHeight());
+        for (int i=0; i<possibleCharsBitmapPixels.length; i++) {
+            // Each RGB component should be equal; take the blue.
+            possibleCharsGrayscale[i] = (byte) (possibleCharsBitmapPixels[i] & 0xff);
+        }
+
+        // Create workers if needed, and assign them a subset of the rows to render.
+        if (threadPool == null) {
+            initRenderThreadPool(0);
+        }
+        int numWorkers = renderWorkers.size();
+        for (int i=0; i<numWorkers; i++) {
+            renderWorkers.get(i).init(i, numWorkers,
+                    result, charPixelWidth, charPixelHeight, possibleCharsGrayscale, bitmap);
+        }
+
+        try {
+            threadPool.invokeAll(renderWorkers);
+        }
+        catch (InterruptedException ex) {
+            android.util.Log.e("AsciiRenderer", "Interrupted", ex);
+        }
+        bitmap.prepareToDraw();
+
+        if (DEBUG) {
+            long t2 = System.nanoTime();
+            long millis = (long)((t2-t1) / 1e6);
+            int numThreads = (renderWorkers != null) ? renderWorkers.size() : 1;
+            android.util.Log.e("AC", "Created output bitmap in " + millis + "ms using " + numThreads + " threads");
+        }
     }
+
+    private void fillPixelsInRow(int[] rowPixels, int numRowPixels,
+            int[] asciiValues, int[] colorValues, int numValues,
+            byte[] charsBitmap, int charWidth, int charHeight, int numChars) {
+        int offset = 0;
+        int pixelsPerRow = numValues * charWidth;
+        // For each row of pixels:
+        for (int y=0; y<charHeight; y++) {
+            // For each character to draw:
+            for (int charPosition=0; charPosition<numChars; charPosition++) {
+                int charValue = asciiValues[charPosition];
+                int charColor = colorValues[charPosition];
+                // Index into the chars bitmap, going "down" the number of rows,
+                // and "across" the amount of character widths given by the index.
+                int charBitmapOffset = y*pixelsPerRow + charValue*charWidth;
+                for (int i=0; i<charWidth; i++) {
+                    byte bitmapValue = charsBitmap[charBitmapOffset++];
+                    rowPixels[offset++] = (bitmapValue!=0) ? charColor : 0xff000000;
+                }
+            }
+        }
+    }
+
+    // Implemented in asciiart.c, almost identical to the above Java implementation.
+    private native void fillPixelsInRowNative(int[] pixels, int numPixels,
+            int[] asciiValues, int[] colorValues, int numValues,
+            byte[] charsBitmap, int charWidth, int charHeight, int numChars);
 
     public Bitmap createBitmap(AsciiConverter.Result result) {
         int nextIndex = (activeBitmapIndex + 1) % bitmaps.length;
@@ -111,7 +315,7 @@ public class AsciiRenderer {
                 bitmaps[nextIndex].getHeight()!=outputImageHeight) {
             bitmaps[nextIndex] = Bitmap.createBitmap(outputImageWidth, outputImageHeight, Bitmap.Config.ARGB_8888);
         }
-        drawIntoCanvas(result, new Canvas(bitmaps[nextIndex]));
+        drawIntoBitmap(result, bitmaps[nextIndex]);
         activeBitmapIndex = nextIndex;
         return bitmaps[activeBitmapIndex];
     }

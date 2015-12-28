@@ -33,6 +33,8 @@ import com.dozingcatsoftware.util.ShutterButton;
 public class AsciiCamActivity extends Activity
         implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener, CameraPreviewProcessingQueue.Processor {
 
+	final static boolean DEBUG = false;
+
     ARManager arManager;
     AsciiConverter asciiConverter = new AsciiConverter();
     AsciiConverter.Result asciiResult = new AsciiConverter.Result();
@@ -266,6 +268,7 @@ public class AsciiCamActivity extends Activity
         CameraUtils.CameraInfo cameraInfo = CameraUtils.getCameraInfo(arManager.getCameraId());
         AsciiConverter.Orientation orientation = cameraInfo.isRotated180Degrees() ?
                 AsciiConverter.Orientation.ROTATED_180 : AsciiConverter.Orientation.NORMAL;
+        if (DEBUG) Log.i("AsciiCam", "got image: " + orientation);
 
         synchronized(pictureLock) {
             imageRenderer.setMaximumImageSize(overlayView.getWidth(), overlayView.getHeight());

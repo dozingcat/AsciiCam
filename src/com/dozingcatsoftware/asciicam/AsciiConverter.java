@@ -22,13 +22,13 @@ public class AsciiConverter {
 
     public static enum ColorType {
     	// all same color
-        NONE(" .:oO8@"),
+        NONE(" .:oO8#"),
 
         // primary colors and combinations (red/green/blue/cyan/magenta/yellow/white)
-        ANSI_COLOR(" .:oO8@"),
+        ANSI_COLOR(" .:oO8#"),
 
         // all colors
-        FULL_COLOR("O8@");
+        FULL_COLOR("O8#");
 
         String[] pixelChars;
 
@@ -64,6 +64,10 @@ public class AsciiConverter {
 
         public String stringAtRowColumn(int row, int col) {
             return pixelChars[asciiIndexes[row*columns + col]];
+        }
+
+        public int asciiIndexAtRowColumn(int row, int col) {
+            return asciiIndexes[row*columns + col];
         }
 
         public int colorAtRowColumn(int row, int col) {
@@ -166,8 +170,8 @@ public class AsciiConverter {
             this.result = result;
         }
 
+        // Returns time in nanoseconds to execute.
         @Override public Long call() {
-            // returns time in nanoseconds to execute
             long t1 = System.nanoTime();
             int startRow = asciiRows * segmentNumber / totalSegments;
             int endRow = asciiRows * (segmentNumber + 1) / totalSegments;
