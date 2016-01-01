@@ -187,6 +187,13 @@ public class AsciiRenderer {
         }
     }
 
+    public void destroyThreadPool() {
+        if (threadPool!=null) {
+            threadPool.shutdown();
+            threadPool = null;
+        }
+    }
+
     private void drawIntoBitmap(AsciiConverter.Result result, Bitmap bitmap) {
         paint.setARGB(255, 255, 255, 255);
 
@@ -392,5 +399,4 @@ public class AsciiRenderer {
         writer.write("</pre>\n");
         writer.write("</div></body></html>");
     }
-
 }
