@@ -94,7 +94,11 @@ public class AsciiRenderer {
                             possibleCharsGrayscale, charPixelWidth, charPixelHeight, result.columns);
                 }
                 int y = charPixelHeight * row;
-                outputBitmap.setPixels(renderedRowPixels, 0, pixelsPerRow, 0, y, pixelsPerRow, charPixelHeight);
+                // setPixels is not threadsafe; without synchronization some devices end up with
+                // slightly garbled images.
+                synchronized (outputBitmap) {
+                    outputBitmap.setPixels(renderedRowPixels, 0, pixelsPerRow, 0, y, pixelsPerRow, charPixelHeight);
+                }
             }
             return System.nanoTime() - t1;
         }
