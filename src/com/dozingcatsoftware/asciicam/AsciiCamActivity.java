@@ -65,6 +65,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
     final static int ACTIVITY_PICK_IMAGE = 2;
 
     ImageButton cycleColorButton;
+    ImageButton switchCameraButton;
     ShutterButton shutterButton;
     SurfaceView cameraView;
     OverlayView overlayView;
@@ -92,6 +93,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         cameraView = (SurfaceView)findViewById(R.id.cameraView);
         overlayView = (OverlayView)findViewById(R.id.overlayView);
         cycleColorButton = (ImageButton)findViewById(R.id.cycleColorButton);
+        switchCameraButton = (ImageButton)findViewById(R.id.switchCameraButton);
         shutterButton = (ShutterButton)findViewById(R.id.shutterButton);
         shutterButton.setOnShutterButtonListener(this);
 
@@ -100,7 +102,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         // Having 2 buffers lets us store a subsequent frame if the previous frame is still being processed.
         arManager.setNumberOfPreviewCallbackBuffers(2);
 
-        findViewById(R.id.switchCameraButton).setVisibility(CameraUtils.numberOfCameras() > 1 ? View.VISIBLE : View.GONE);
+        switchCameraButton.setVisibility(CameraUtils.numberOfCameras() > 1 ? View.VISIBLE : View.GONE);
         updateFromPreferences();
         updateColorButton();
     }
@@ -121,6 +123,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         super.onResume();
         appVisible = true;
         arManager.startCameraIfVisible();
+        updateSwitchCameraButton();
         imageProcessor = new AsyncProcessor<CameraPreviewData, Bitmap>();
         imageProcessor.start();
         AndroidUtils.setSystemUiLowProfile(cameraView);
@@ -242,6 +245,14 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         }
     }
 
+    void updateSwitchCameraButton() {
+        if (switchCameraButton.getVisibility() == View.GONE) return;
+        boolean isFrontFacing = CameraUtils.getCameraInfo(arManager.getCameraId()).isFrontFacing();
+        switchCameraButton.setImageResource(isFrontFacing ?
+                R.drawable.ic_camera_front_white_36dp :
+                R.drawable.ic_camera_rear_white_36dp);
+    }
+
     // onClick_ methods are assigned as onclick handlers in the main.xml layout
     public void onClick_cycleColorMode(View view) {
         AsciiConverter.ColorType[] colorTypeValues = AsciiConverter.ColorType.values();
@@ -266,6 +277,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
 
     public void onClick_switchCamera(View view) {
         arManager.switchToNextCamera();
+        updateSwitchCameraButton();
     }
 
     public void onClick_convertPicture(View view) {

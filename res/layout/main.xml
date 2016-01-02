@@ -41,7 +41,7 @@
 
             <View
                 android:layout_width="0dp"
-                android:layout_height="8dp" />
+                android:layout_height="12dp" />
 
             <ImageButton
                 android:id="@+id/cycleColorButton"
@@ -54,7 +54,7 @@
 
             <View
                 android:layout_width="0dp"
-                android:layout_height="8dp" />
+                android:layout_height="12dp" />
 
             <ImageButton
                 android:layout_width="wrap_content"
@@ -62,11 +62,11 @@
                 android:layout_gravity="center"
                 android:background="#00000000"
                 android:onClick="onClick_gotoPreferences"
-                android:src="@android:drawable/ic_menu_preferences" />
+                android:src="@drawable/ic_settings_white_36dp" />
 
             <View
                 android:layout_width="0dp"
-                android:layout_height="8dp" />
+                android:layout_height="12dp" />
 
             <ImageButton
                 android:layout_width="wrap_content"
@@ -74,11 +74,11 @@
                 android:layout_gravity="center"
                 android:background="#00000000"
                 android:onClick="onClick_gotoGallery"
-                android:src="@android:drawable/ic_menu_gallery" />
+                android:src="@drawable/ic_photo_library_white_36dp" />
 
             <View
                 android:layout_width="0dp"
-                android:layout_height="8dp" />
+                android:layout_height="12dp" />
 
             <ImageButton
                 android:layout_width="wrap_content"
@@ -90,7 +90,7 @@
 
             <View
                 android:layout_width="0dp"
-                android:layout_height="8dp" />
+                android:layout_height="12dp" />
 
             <ImageButton
                 android:id="@+id/switchCameraButton"
@@ -99,7 +99,7 @@
                 android:layout_gravity="center"
                 android:background="#00000000"
                 android:onClick="onClick_switchCamera"
-                android:src="@drawable/ic_switch_photo_facing_holo_light" />
+                android:src="@drawable/ic_camera_rear_white_36dp" />
 
             <LinearLayout
                 android:layout_width="fill_parent"
@@ -115,7 +115,7 @@
                     android:layout_gravity="center"
                     android:background="#00000000"
                     android:onClick="onClick_gotoAbout"
-                    android:src="@android:drawable/ic_menu_help" />
+                    android:src="@drawable/ic_help_outline_white_36dp" />
             </LinearLayout>
         </LinearLayout>
     </FrameLayout>
