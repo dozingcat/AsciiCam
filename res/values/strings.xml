@@ -7,10 +7,20 @@
     <string name="errorSavingPicture">Error saving picture</string>
 
 	<string name="deleteImageButtonLabel">Delete Picture</string>
-	<string name="shareImageButtonLabel">Share Picture</string>
-	<string name="shareHtmlButtonLabel">Share HTML</string>
+	<string name="shareButtonLabel">Share Picture</string>
 	<string name="exitViewImageButtonLabel">Return</string>
 	
+	<string name="shareDialogTitle">How do you want to share this picture?</string>
+	<string name="shareImageOptionLabel">Share Image</string>
+	<string name="shareHtmlOptionLabel">Share HTML</string>
+	<string name="shareTextOptionLabel">Share Text</string>
+	<string name="shareDialogYesLabel">Share</string>
+	<string name="shareDialogNoLabel">Cancel</string>
+			
+	<string name="shareImageTitle">Share image using:</string>
+	<string name="shareHtmlTitle">Share HTML using:</string>
+	<string name="shareTextTitle">Share text using:</string>
+		
 	<string name="galleryButtonLabel">Gallery</string>
 	<string name="aboutButtonLabel">About</string>
 	<string name="preferencesButtonLabel">Preferences</string>

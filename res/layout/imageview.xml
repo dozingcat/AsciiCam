@@ -16,11 +16,12 @@
 		<Button android:id="@+id/deleteImageButton" android:text="@string/deleteImageButtonLabel" android:onClick="deleteImage"
 			android:layout_width="wrap_content" android:layout_height="wrap_content" />
 
-		<Button android:id="@+id/shareImageButton" android:text="@string/shareImageButtonLabel" android:onClick="shareImage"
-			android:layout_width="wrap_content" android:layout_height="wrap_content" />
-
-		<Button android:id="@+id/shareHtmlButton" android:text="@string/shareHtmlButtonLabel" android:onClick="shareHtml"
-			android:layout_width="wrap_content" android:layout_height="wrap_content" />
+		<Button
+		    android:id="@+id/shareButton"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:onClick="sharePicture"
+		    android:text="@string/shareButtonLabel" />
 
 		<Button android:id="@+id/exitViewImageButton" android:text="@string/exitViewImageButtonLabel" android:onClick="goBack"
 			android:layout_width="wrap_content" android:layout_height="wrap_content" />
