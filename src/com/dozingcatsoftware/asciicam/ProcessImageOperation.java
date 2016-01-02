@@ -1,10 +1,6 @@
 package com.dozingcatsoftware.asciicam;
 
 import java.io.IOException;
-import java.io.Writer;
-
-import com.dozingcatsoftware.asciicam.AsciiConverter.ColorType;
-import com.dozingcatsoftware.util.AndroidUtils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -13,6 +9,9 @@ import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.view.Display;
 import android.view.WindowManager;
+
+import com.dozingcatsoftware.asciicam.AsciiConverter.ColorType;
+import com.dozingcatsoftware.util.AndroidUtils;
 
 public class ProcessImageOperation {
 
@@ -33,7 +32,7 @@ public class ProcessImageOperation {
         }
         String prefsKey = context.getString(R.string.pixelCharsPrefIdPrefix) + colorType.name();
         String pixelChars = prefs.getString(prefsKey, null);
-                
+
         WindowManager wm = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
         // assume width is always larger
@@ -42,24 +41,19 @@ public class ProcessImageOperation {
 
         final AsciiRenderer renderer = new AsciiRenderer();
         renderer.setMaximumImageSize(displayWidth, displayHeight);
-        
+
         int minWidth = Math.max(2*renderer.asciiColumns(), 480);
         int minHeight = Math.max(2*renderer.asciiRows(), 320);
         Bitmap bitmap = AndroidUtils.scaledBitmapFromURIWithMinimumSize(context, uri, minWidth, minHeight);
         renderer.setCameraImageSize(bitmap.getWidth(), bitmap.getHeight());
-        
+
         AsciiConverter converter = new AsciiConverter();
-        final AsciiConverter.Result result = converter.computeResultForBitmap(bitmap, 
+        final AsciiConverter.Result result = converter.computeResultForBitmap(bitmap,
                 renderer.asciiRows(), renderer.asciiColumns(), colorType, pixelChars);
-        
+
         AsciiImageWriter imageWriter = new AsciiImageWriter();
-        return imageWriter.saveImageAndThumbnail(renderer.createBitmap(result), 
+        return imageWriter.saveImageAndThumbnail(renderer.createBitmap(result),
                 renderer.createThumbnailBitmap(result),
-                new AsciiImageWriter.HtmlProvider() {
-                    public void writeHtml(Writer writer, String imageName) throws IOException {
-                        renderer.writeHtml(result, writer, imageName);
-                    }
-                }
-        );
+                result);
     }
 }

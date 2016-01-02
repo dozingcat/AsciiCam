@@ -4,7 +4,6 @@ package com.dozingcatsoftware.asciicam;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -186,14 +185,10 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
 
     void takePictureThreadEntry(final AsciiConverter.Result result) {
         try {
-            final String pngPath = imageWriter.saveImageAndThumbnail(imageRenderer.getVisibleBitmap(),
+            final String pngPath = imageWriter.saveImageAndThumbnail(
+                    imageRenderer.getVisibleBitmap(),
                     imageRenderer.createThumbnailBitmap(result),
-                    new AsciiImageWriter.HtmlProvider() {
-                @Override public void writeHtml(Writer writer, String imageName) throws IOException {
-                    imageRenderer.writeHtml(result, writer, imageName);
-                }
-            }
-                    );
+                    result);
             handler.post(new Runnable() {
                 @Override public void run() {
                     bitmapSaved(pngPath, "image/png");

@@ -1,7 +1,5 @@
 package com.dozingcatsoftware.asciicam;
 
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -361,42 +359,5 @@ public class AsciiRenderer {
             }
         }
         return bitmap;
-    }
-
-    public void writeHtml(AsciiConverter.Result result, Writer writer, String imageName) throws IOException {
-        writer.write("<html><head></title>Ascii Picture " + imageName + "</title></head>");
-        writer.write("<body><div style=\"background: black; letter-spacing: 3px;\">\n");
-
-        writer.write("<pre>");
-        for(int r=0; r<result.rows; r++) {
-            boolean hasSetColor = false;
-            int lastColor = 0;
-            // loop precondition: output is in the middle of a <span> tag.
-            // This allows skipping the tag if it's a space or the same color as previous char.
-            writer.write("<span>");
-            for(int c=0; c<result.columns; c++) {
-                String asciiChar = result.stringAtRowColumn(r, c);
-                // don't use span tag for space
-                if (" ".equals(asciiChar)) {
-                    writer.write(asciiChar);
-                    continue;
-                }
-                int color = result.colorAtRowColumn(r, c);
-                if (hasSetColor && color==lastColor) {
-                    writer.write(asciiChar);
-                    continue;
-                }
-                String htmlColor = Integer.toHexString(color & 0x00ffffff);
-                while (htmlColor.length() < 6) {
-                    htmlColor = "0" + htmlColor;
-                }
-                lastColor = color;
-                hasSetColor = true;
-                writer.write(String.format("</span><span style=\"color:%s\">%s", htmlColor, asciiChar));
-            }
-            writer.write("</span>\n");
-        }
-        writer.write("</pre>\n");
-        writer.write("</div></body></html>");
     }
 }
