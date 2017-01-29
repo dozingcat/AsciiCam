@@ -7,6 +7,13 @@ import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
 
+import com.dozingcatsoftware.util.ARManager;
+import com.dozingcatsoftware.util.AndroidUtils;
+import com.dozingcatsoftware.util.AsyncProcessor;
+import com.dozingcatsoftware.util.CameraUtils;
+import com.dozingcatsoftware.util.ShutterButton;
+
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -17,18 +24,15 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.Window;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.Toast;
-
-import com.dozingcatsoftware.util.ARManager;
-import com.dozingcatsoftware.util.AndroidUtils;
-import com.dozingcatsoftware.util.AsyncProcessor;
-import com.dozingcatsoftware.util.CameraUtils;
-import com.dozingcatsoftware.util.ShutterButton;
 
 public class AsciiCamActivity extends Activity
 implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
@@ -69,6 +73,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
     ShutterButton shutterButton;
     SurfaceView cameraView;
     OverlayView overlayView;
+    LinearLayout verticalButtonBar;
 
     Handler handler = new Handler();
     boolean cameraViewReady = false;
@@ -92,6 +97,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
 
         cameraView = (SurfaceView)findViewById(R.id.cameraView);
         overlayView = (OverlayView)findViewById(R.id.overlayView);
+        verticalButtonBar = (LinearLayout)findViewById(R.id.verticalButtonBar);
         cycleColorButton = (ImageButton)findViewById(R.id.cycleColorButton);
         switchCameraButton = (ImageButton)findViewById(R.id.switchCameraButton);
         shutterButton = (ShutterButton)findViewById(R.id.shutterButton);
@@ -129,6 +135,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         AndroidUtils.setSystemUiLowProfile(cameraView);
     }
 
+    @SuppressLint("RtlHardcoded")
     void updateFromPreferences() {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
         for(AsciiConverter.ColorType colorType : AsciiConverter.ColorType.values()) {
@@ -139,14 +146,20 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         String colorTypeName = prefs.getString("colorType", null);
         if (colorTypeName!=null) {
             try {
-                this.colorType = AsciiConverter.ColorType.valueOf(colorTypeName);;
+                this.colorType = AsciiConverter.ColorType.valueOf(colorTypeName);
             }
             catch(Exception ignored) {}
         }
         if (colorType==null) {
             colorType = AsciiConverter.ColorType.ANSI_COLOR;
         }
+
         AsciiCamPreferences.setAutoConvertEnabled(this, prefs.getBoolean(getString(R.string.autoConvertPicturesPrefId), false));
+
+        boolean controlsOnLeft = prefs.getBoolean(getString(R.string.controlsOnLeftPrefId), false);
+        FrameLayout.LayoutParams controlLayout = (FrameLayout.LayoutParams)verticalButtonBar.getLayoutParams();
+        controlLayout.gravity = controlsOnLeft ? Gravity.LEFT : Gravity.RIGHT;
+        verticalButtonBar.setLayoutParams(controlLayout);
     }
 
     void saveColorStyleToPreferences() {
