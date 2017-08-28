@@ -57,6 +57,7 @@
                 android:layout_height="12dp" />
 
             <ImageButton
+                android:id="@+id/settingsButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -69,6 +70,7 @@
                 android:layout_height="12dp" />
 
             <ImageButton
+                android:id="@+id/galleryButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -81,6 +83,7 @@
                 android:layout_height="12dp" />
 
             <ImageButton
+                android:id="@+id/convertPictureButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -110,6 +113,7 @@
                 android:visibility="visible" >
 
                 <ImageButton
+                    android:id="@+id/helpButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
