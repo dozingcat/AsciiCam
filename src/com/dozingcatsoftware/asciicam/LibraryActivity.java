@@ -4,11 +4,12 @@ package com.dozingcatsoftware.asciicam;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.dozingcatsoftware.util.AsyncImageLoader;
+import com.dozingcatsoftware.util.ScaledBitmapCache;
 
 import android.app.Activity;
 import android.content.Context;
@@ -21,9 +22,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.SimpleAdapter;
-
-import com.dozingcatsoftware.util.AsyncImageLoader;
-import com.dozingcatsoftware.util.ScaledBitmapCache;
 
 /**
  * Activity which displays all pictures the user has taken in a scrolling grid. Selecting an image opens it
@@ -75,26 +73,12 @@ public class LibraryActivity extends Activity {
     }
 
     void readImageThumbnails() {
-        List<File> files = Collections.emptyList();
-        File dir = new File(imageDirectory);
-        if (dir.isDirectory()) {
-            files = Arrays.asList(dir.listFiles());
-        }
-        Collections.sort(files);
-        Collections.reverse(files);
-
-        // look for foo.png in the foo directory
+        ImageLibrary library = new ImageLibrary(imageDirectory);
         imageMaps.clear();
-        for(File fileDir : files) {
-            if (fileDir.isDirectory()) {
-                File pngFile = new File(fileDir, fileDir.getName()+".png");
-                if (pngFile.isFile()) {
-                    Uri imageUri = Uri.fromFile(pngFile);
-                    Map<String, Uri> dmap = new HashMap<String, Uri>();
-                    dmap.put(IMAGE_URI_KEY, imageUri);
-                    imageMaps.add(dmap);
-                }
-            }
+        for (String path : library.allImagePaths()) {
+            Map<String, Uri> dmap = new HashMap<String, Uri>();
+            dmap.put(IMAGE_URI_KEY, Uri.fromFile(new File(path)));
+            imageMaps.add(dmap);
         }
     }
 

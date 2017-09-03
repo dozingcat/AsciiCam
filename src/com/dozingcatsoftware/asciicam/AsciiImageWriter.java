@@ -32,7 +32,7 @@ public class AsciiImageWriter {
     public String saveImageAndThumbnail(Bitmap image, Bitmap thumbnail, AsciiConverter.Result asciiResult)
             throws IOException {
         String datestr = filenameDateFormat.format(new Date());
-        String dir = getBasePictureDirectory() + File.separator + datestr;
+        String dir = getBasePictureDirectory();
         // make sure image and thumbnail directories exist
         (new File(dir)).mkdirs();
         if (!((new File(dir)).isDirectory())) {
@@ -86,8 +86,12 @@ public class AsciiImageWriter {
     }
 
     public void writeHtml(AsciiConverter.Result result, Writer writer, String imageName) throws IOException {
-        writer.write("<html><head></title>Ascii Picture " + imageName + "</title></head>");
-        writer.write("<body style=\"background:black\"><div style=\"background:black; letter-spacing:3px;\">\n");
+        // backgroundColor always has the high bits set for alpha, so toHexString() will be 8 characters.
+        String backgroundColor = "#" + Integer.toHexString(result.backgroundColor()).substring(2, 8);
+
+        writer.write("<html><head><title>Ascii Picture " + imageName + "</title></head>");
+        writer.write("<body style=\"background:" + backgroundColor + "\">" +
+                     "<div style=\"background:" + backgroundColor + "; letter-spacing:3px;\">\n");
 
         writer.write("<pre>");
         for(int r=0; r<result.rows; r++) {
