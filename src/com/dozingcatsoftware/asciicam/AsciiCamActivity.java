@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.EnumMap;
 import java.util.Map;
 
+import com.dozingcatsoftware.asciicam.AsciiConverter.ColorType;
 import com.dozingcatsoftware.util.ARManager;
 import com.dozingcatsoftware.util.AndroidUtils;
 import com.dozingcatsoftware.util.AsyncProcessor;
@@ -18,6 +19,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
@@ -70,6 +72,10 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
 
     ImageButton cycleColorButton;
     ImageButton switchCameraButton;
+    ImageButton settingsButton;
+    ImageButton galleryButton;
+    ImageButton convertPictureButton;
+    ImageButton helpButton;
     ShutterButton shutterButton;
     SurfaceView cameraView;
     OverlayView overlayView;
@@ -100,6 +106,10 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         verticalButtonBar = (LinearLayout)findViewById(R.id.verticalButtonBar);
         cycleColorButton = (ImageButton)findViewById(R.id.cycleColorButton);
         switchCameraButton = (ImageButton)findViewById(R.id.switchCameraButton);
+        settingsButton = (ImageButton)findViewById(R.id.settingsButton);
+        galleryButton = (ImageButton)findViewById(R.id.galleryButton);
+        convertPictureButton = (ImageButton)findViewById(R.id.convertPictureButton);
+        helpButton = (ImageButton)findViewById(R.id.helpButton);
         shutterButton = (ShutterButton)findViewById(R.id.shutterButton);
         shutterButton.setOnShutterButtonListener(this);
 
@@ -110,7 +120,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
 
         switchCameraButton.setVisibility(CameraUtils.numberOfCameras() > 1 ? View.VISIBLE : View.GONE);
         updateFromPreferences();
-        updateColorButton();
+        updateButtonsAndBackground();
     }
 
     @Override public void onPause() {
@@ -129,7 +139,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         super.onResume();
         appVisible = true;
         arManager.startCameraIfVisible();
-        updateSwitchCameraButton();
+        updateButtonsAndBackground();
         imageProcessor = new AsyncProcessor<CameraPreviewData, Bitmap>();
         imageProcessor.start();
         AndroidUtils.setSystemUiLowProfile(cameraView);
@@ -247,23 +257,36 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         }
     }
 
-    void updateColorButton() {
+    private void setImageResource(ImageButton button, String resourceName)
+            throws IllegalAccessException, NoSuchFieldException {
+        Integer resId = (Integer)R.drawable.class.getField(resourceName).get(null);
+        button.setImageResource(resId);
+    }
+
+    void updateButtonsAndBackground() {
         try {
             String resName = "btn_color_" + this.colorType.name().toLowerCase();
-            Integer resId = (Integer)R.drawable.class.getField(resName).get(null);
-            cycleColorButton.setImageResource(resId);
+            setImageResource(cycleColorButton, resName);
+
+            String colorSuffix = (this.colorType == ColorType.BLACK_ON_WHITE) ? "black" : "white";
+            setImageResource(settingsButton, "ic_settings_" + colorSuffix + "_36dp");
+            setImageResource(galleryButton, "ic_photo_library_" + colorSuffix + "_36dp");
+            setImageResource(settingsButton, "ic_settings_" + colorSuffix + "_36dp");
+            setImageResource(helpButton, "ic_help_outline_" + colorSuffix + "_36dp");
+
+            if (switchCameraButton.getVisibility() != View.GONE) {
+                boolean isFrontFacing = CameraUtils.getCameraInfo(arManager.getCameraId()).isFrontFacing();
+                setImageResource(switchCameraButton, isFrontFacing ?
+                        "ic_camera_front_" + colorSuffix + "_36dp" :
+                        "ic_camera_rear_" + colorSuffix + "_36dp");
+            }
+
+            this.overlayView.setBackgroundFillColor((this.colorType == ColorType.BLACK_ON_WHITE) ?
+                    Color.argb(255, 255, 255, 255) : Color.argb(255, 0, 0, 0));
         }
         catch(Exception ex) {
             Log.e(TAG, "Error updating color button", ex);
         }
-    }
-
-    void updateSwitchCameraButton() {
-        if (switchCameraButton.getVisibility() == View.GONE) return;
-        boolean isFrontFacing = CameraUtils.getCameraInfo(arManager.getCameraId()).isFrontFacing();
-        switchCameraButton.setImageResource(isFrontFacing ?
-                R.drawable.ic_camera_front_white_36dp :
-                R.drawable.ic_camera_rear_white_36dp);
     }
 
     // onClick_ methods are assigned as onclick handlers in the main.xml layout
@@ -271,7 +294,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         AsciiConverter.ColorType[] colorTypeValues = AsciiConverter.ColorType.values();
         this.colorType = colorTypeValues[(this.colorType.ordinal() + 1) % colorTypeValues.length];
         saveColorStyleToPreferences();
-        updateColorButton();
+        updateButtonsAndBackground();
     }
 
     public void onClick_gotoGallery(View view) {
@@ -290,7 +313,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
 
     public void onClick_switchCamera(View view) {
         arManager.switchToNextCamera();
-        updateSwitchCameraButton();
+        updateButtonsAndBackground();
     }
 
     public void onClick_convertPicture(View view) {

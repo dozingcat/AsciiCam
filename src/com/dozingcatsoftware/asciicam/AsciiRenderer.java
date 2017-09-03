@@ -42,6 +42,7 @@ public class AsciiRenderer {
         int charPixelWidth, charPixelHeight;
         AsciiConverter.Result result;
         byte[] possibleCharsGrayscale;
+        int backgroundColor;
         Bitmap outputBitmap;
 
         int[] rowAsciiValues;
@@ -50,7 +51,7 @@ public class AsciiRenderer {
 
         void init(int workerId, int numWorkers,
                 AsciiConverter.Result result,
-                int charPixelWidth, int charPixelHeight, byte[] possibleCharsGrayscale,
+                int charPixelWidth, int charPixelHeight, byte[] possibleCharsGrayscale, int bgColor,
                 Bitmap outputBitmap) {
             this.startRow = result.rows * workerId / numWorkers;
             this.endRow = result.rows * (workerId + 1) / numWorkers;
@@ -58,6 +59,7 @@ public class AsciiRenderer {
             this.charPixelHeight = charPixelHeight;
             this.result = result;
             this.possibleCharsGrayscale = possibleCharsGrayscale;
+            this.backgroundColor = bgColor;
             this.outputBitmap = outputBitmap;
 
             int pixelArraySize = charPixelWidth * charPixelHeight * result.columns;
@@ -86,12 +88,14 @@ public class AsciiRenderer {
                 if (nativeCodeAvailable) {
                     fillPixelsInRowNative(renderedRowPixels, renderedRowPixels.length,
                             rowAsciiValues, rowColorValues, rowAsciiValues.length,
-                            possibleCharsGrayscale, charPixelWidth, charPixelHeight, result.columns);
+                            possibleCharsGrayscale, backgroundColor,
+                            charPixelWidth, charPixelHeight, result.columns);
                 }
                 else {
                     fillPixelsInRow(renderedRowPixels, renderedRowPixels.length,
                             rowAsciiValues, rowColorValues, rowAsciiValues.length,
-                            possibleCharsGrayscale, charPixelWidth, charPixelHeight, result.columns);
+                            possibleCharsGrayscale, backgroundColor,
+                            charPixelWidth, charPixelHeight, result.columns);
                 }
                 int y = charPixelHeight * row;
                 // setPixels is not threadsafe; without synchronization some devices end up with
@@ -270,8 +274,8 @@ public class AsciiRenderer {
         }
         int numWorkers = renderWorkers.size();
         for (int i=0; i<numWorkers; i++) {
-            renderWorkers.get(i).init(i, numWorkers,
-                    result, charPixelWidth, charPixelHeight, possibleCharsGrayscale, bitmap);
+            renderWorkers.get(i).init(i, numWorkers, result, charPixelWidth, charPixelHeight,
+                    possibleCharsGrayscale, result.backgroundColor(), bitmap);
         }
 
         try {
@@ -292,7 +296,7 @@ public class AsciiRenderer {
 
     private void fillPixelsInRow(int[] rowPixels, int numRowPixels,
             int[] asciiValues, int[] colorValues, int numValues,
-            byte[] charsBitmap, int charWidth, int charHeight, int numChars) {
+            byte[] charsBitmap, int backgroundColor, int charWidth, int charHeight, int numChars) {
         int offset = 0;
         int pixelsPerRow = numValues * charWidth;
         // For each row of pixels:
@@ -306,7 +310,7 @@ public class AsciiRenderer {
                 int charBitmapOffset = y*pixelsPerRow + charValue*charWidth;
                 for (int i=0; i<charWidth; i++) {
                     byte bitmapValue = charsBitmap[charBitmapOffset++];
-                    rowPixels[offset++] = (bitmapValue!=0) ? charColor : 0xff000000;
+                    rowPixels[offset++] = (bitmapValue!=0) ? charColor : backgroundColor;
                 }
             }
         }
@@ -315,7 +319,7 @@ public class AsciiRenderer {
     // Implemented in asciiart.c, almost identical to the above Java implementation.
     private native void fillPixelsInRowNative(int[] pixels, int numPixels,
             int[] asciiValues, int[] colorValues, int numValues,
-            byte[] charsBitmap, int charWidth, int charHeight, int numChars);
+            byte[] charsBitmap, int backgroundColor, int charWidth, int charHeight, int numChars);
 
     public Bitmap createBitmap(AsciiConverter.Result result) {
         int nextIndex = (activeBitmapIndex + 1) % bitmaps.length;

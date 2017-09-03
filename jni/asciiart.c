@@ -130,7 +130,8 @@ void Java_com_dozingcatsoftware_asciicam_AsciiRenderer_fillPixelsInRowNative(
 		JNIEnv* env, jobject thiz,
 		jintArray jrowPixels, jint numRowPixels,
 		jintArray jasciiValues, jintArray jcolorValues, jint numValues,
-		jbyteArray jcharsBitmap, jint charWidth, jint charHeight, jint numChars) {
+		jbyteArray jcharsBitmap, jint backgroundColor,
+		jint charWidth, jint charHeight, jint numChars) {
 	jint *rowPixels = (*env)->GetIntArrayElements(env, jrowPixels, 0);
 	jint *asciiValues = (*env)->GetIntArrayElements(env, jasciiValues, 0);
 	jint *colorValues = (*env)->GetIntArrayElements(env, jcolorValues, 0);
@@ -151,7 +152,7 @@ void Java_com_dozingcatsoftware_asciicam_AsciiRenderer_fillPixelsInRowNative(
 			// specified color if the brightness is >0, otherwise black.
 			for (int i=0; i<charWidth; i++) {
 				jbyte bitmapValue = charsBitmap[charBitmapOffset++];
-				rowPixels[offset++] = (bitmapValue) ? charColor : 0xff000000;
+				rowPixels[offset++] = (bitmapValue) ? charColor : backgroundColor;
 			}
 		}
 	}

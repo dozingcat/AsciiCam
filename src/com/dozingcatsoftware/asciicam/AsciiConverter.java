@@ -21,8 +21,10 @@ public class AsciiConverter {
     static final boolean DEBUG = false;
 
     public static enum ColorType {
-    	// all same color
-        NONE(" .:oO8#"),
+    	// First character is dark, so BLACK_ON_WHITE is reversed.
+        WHITE_ON_BLACK(" .:oO8#"),
+
+        BLACK_ON_WHITE("#o:..  "),
 
         // primary colors and combinations (red/green/blue/cyan/magenta/yellow/white)
         ANSI_COLOR(" .:oO8#"),
@@ -38,6 +40,10 @@ public class AsciiConverter {
 
         public String[] getDefaultPixelChars() {
         	return pixelChars;
+        }
+
+        public boolean isMonochrome() {
+            return this == WHITE_ON_BLACK || this == BLACK_ON_WHITE;
         }
     }
 
@@ -71,8 +77,14 @@ public class AsciiConverter {
         }
 
         public int colorAtRowColumn(int row, int col) {
-            if (colorType==ColorType.NONE) return 0xffffffff;
+            if (colorType==ColorType.WHITE_ON_BLACK) return 0xffffffff;
+            if (colorType==ColorType.BLACK_ON_WHITE) return 0xff000000;
             return asciiColors[row*columns + col];
+        }
+
+        public int backgroundColor() {
+            if (colorType==ColorType.BLACK_ON_WHITE) return 0xffffffff;
+            return 0xff000000;
         }
 
         public float brightnessRatioAtRowColumn(int row, int col) {
@@ -266,7 +278,7 @@ public class AsciiConverter {
             result.asciiIndexes = new int[asciiRows * asciiCols];
         }
 
-        if (colorType!=ColorType.NONE) {
+        if (!colorType.isMonochrome()) {
             if (result.asciiColors==null || result.asciiIndexes.length!=asciiRows*asciiCols) {
                 result.asciiColors = new int[asciiRows * asciiCols];
             }
@@ -392,10 +404,9 @@ public class AsciiConverter {
         result.colorType = colorType;
         result.asciiColors = new int[asciiRows*asciiCols];
         result.asciiIndexes = new int[asciiRows*asciiCols];
-        result.pixelChars = (pixelCharString!=null) ?
+        result.pixelChars = (pixelCharString!=null && pixelCharString.length() > 0) ?
                 toPixelCharArray(pixelCharString) : colorType.getDefaultPixelChars();
 
-        // TODO: read bitmap pixels into array for faster processing
         int[] pixels = null;
         int asciiIndex = 0;
         for(int r=0; r<asciiRows; r++) {
@@ -419,7 +430,6 @@ public class AsciiConverter {
                         samples++;
 
                         int color = pixels[poffset++];
-                        //int color = bitmap.getPixel(x, y);
                         int red = (color >> 16) & 0xff;
                         int green = (color >> 8) & 0xff;
                         int blue = color & 0xff;
@@ -439,7 +449,7 @@ public class AsciiConverter {
                     }
                 }
 
-                if (colorType!=ColorType.NONE) {
+                if (!colorType.isMonochrome()) {
                     int averageRed = totalRed / samples;
                     int averageGreen = totalGreen / samples;
                     int averageBlue = totalBlue / samples;
