@@ -215,6 +215,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
                     imageRenderer.getVisibleBitmap(),
                     imageRenderer.createThumbnailBitmap(result),
                     result);
+            AndroidUtils.scanSavedMediaFile(this, pngPath);
             handler.post(new Runnable() {
                 @Override public void run() {
                     bitmapSaved(pngPath, "image/png");

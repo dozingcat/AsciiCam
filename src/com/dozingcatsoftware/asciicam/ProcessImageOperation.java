@@ -2,6 +2,9 @@ package com.dozingcatsoftware.asciicam;
 
 import java.io.IOException;
 
+import com.dozingcatsoftware.asciicam.AsciiConverter.ColorType;
+import com.dozingcatsoftware.util.AndroidUtils;
+
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -9,9 +12,6 @@ import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.view.Display;
 import android.view.WindowManager;
-
-import com.dozingcatsoftware.asciicam.AsciiConverter.ColorType;
-import com.dozingcatsoftware.util.AndroidUtils;
 
 public class ProcessImageOperation {
 
@@ -52,8 +52,9 @@ public class ProcessImageOperation {
                 renderer.asciiRows(), renderer.asciiColumns(), colorType, pixelChars);
 
         AsciiImageWriter imageWriter = new AsciiImageWriter();
-        return imageWriter.saveImageAndThumbnail(renderer.createBitmap(result),
-                renderer.createThumbnailBitmap(result),
-                result);
+        String imagePath =  imageWriter.saveImageAndThumbnail(
+                renderer.createBitmap(result), renderer.createThumbnailBitmap(result), result);
+        AndroidUtils.scanSavedMediaFile(context, imagePath);
+        return imagePath;
     }
 }
