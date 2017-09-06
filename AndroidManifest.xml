@@ -4,7 +4,7 @@
     android:versionCode="12"
     android:versionName="1.2.0" >
 
-    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="21" />
+    <uses-sdk android:minSdkVersion="4" android:targetSdkVersion="24" />
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
@@ -46,6 +46,10 @@
             </intent-filter>
         </receiver>
         
+        <service android:name=".NewPictureJob"
+                 android:permission="android.permission.BIND_JOB_SERVICE"
+                 android:exported="true" />
+        
     </application>
-
+    
 </manifest>

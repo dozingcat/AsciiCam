@@ -3,17 +3,19 @@ package com.dozingcatsoftware.asciicam;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 
 /**
  * Receiver for the Camera.ACTION_NEW_PICTURE broadcast message sent when the camera app saves
  * a new picture. Calls ProcessImageOperation to create an ASCII version of the picture.
- * TODO: This is unsupported as of Android N, and you're supposed to use JobService which looks
- * much more complicated.
- * https://developer.android.com/reference/android/hardware/Camera.html#ACTION_NEW_PICTURE
  */
 public class NewPictureReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context context, Intent intent) {
+        // On Android N and later we use a JobService and shouldn't get this notification.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return;
+        }
         //Log.i(getClass().getName(), "Got picture: " + intent.getData());
         try {
             (new ProcessImageOperation()).processImage(context, intent.getData());
