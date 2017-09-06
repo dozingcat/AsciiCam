@@ -13,7 +13,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
@@ -41,15 +40,6 @@ public class NewPictureJob extends JobService {
             Environment.DIRECTORY_DCIM).getPath();
 
     static final int JOB_ID = 1;
-    // A pre-built JobInfo we use for scheduling our job.
-    static final JobInfo JOB_INFO =
-            new JobInfo.Builder(JOB_ID, new ComponentName(NewPictureJob.class.getPackage().getName(),
-                                                          NewPictureJob.class.getName()))
-            .addTriggerContentUri(new JobInfo.TriggerContentUri(
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS))
-            .addTriggerContentUri(new JobInfo.TriggerContentUri(MEDIA_URI, 0))
-            .build();
 
     JobParameters jobParams;
 
@@ -64,7 +54,13 @@ public class NewPictureJob extends JobService {
     // Schedule this job, replace any existing one.
     public static void scheduleJob(Context context) {
         JobScheduler js = context.getSystemService(JobScheduler.class);
-        js.schedule(JOB_INFO);
+        JobInfo info = new JobInfo.Builder(JOB_ID, new ComponentName(context, NewPictureJob.class))
+                .addTriggerContentUri(new JobInfo.TriggerContentUri(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        JobInfo.TriggerContentUri.FLAG_NOTIFY_FOR_DESCENDANTS))
+                .addTriggerContentUri(new JobInfo.TriggerContentUri(MEDIA_URI, 0))
+                .build();
+        js.schedule(info);
         Log.i("NewPictureJob", "JOB SCHEDULED!");
     }
 
@@ -92,7 +88,7 @@ public class NewPictureJob extends JobService {
     @Override
     public boolean onStartJob(JobParameters params) {
         this.jobParams = params;
-        List<String> newImagePaths = new ArrayList<String>();
+        final List<String> newImagePaths = new ArrayList<String>();
         if (params.getTriggeredContentAuthorities() != null && params.getTriggeredContentUris() != null) {
             // If we have details about which URIs changed, then iterate through them
             // and collect either the ids that were impacted or note that a generic
@@ -149,12 +145,12 @@ public class NewPictureJob extends JobService {
         }
         try {
             if (newImagePaths.size() > 0) {
-                (new AsyncTask<String, Void, Void>() {
-                    @Override protected Void doInBackground(String... imagePaths) {
-                        processImagePaths(imagePaths);
-                        return null;
+                // Use a thread rather than an AsyncTask since AsyncTasks are serialized.
+                (new Thread(new Runnable() {
+                    @Override public void run() {
+                        processImagePaths(newImagePaths);
                     }
-                }).execute(newImagePaths.toArray(new String[0]));
+                })).start();
             }
         }
         finally {
@@ -171,7 +167,7 @@ public class NewPictureJob extends JobService {
 
     // This is the only app-specific code. It would be better if this were an abstract class with
     // this as a method to override, but there's an ugly mix of static methods and class names.
-    private void processImagePaths(String[] imagePaths) {
+    private void processImagePaths(List<String> imagePaths) {
         boolean scheduled = isScheduled(this);
         if (!scheduled) {
             return;

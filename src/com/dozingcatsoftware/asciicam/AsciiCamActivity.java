@@ -121,8 +121,6 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
         switchCameraButton.setVisibility(CameraUtils.numberOfCameras() > 1 ? View.VISIBLE : View.GONE);
         updateFromPreferences();
         updateButtonsAndBackground();
-
-        NewPictureJob.scheduleJob(this);
     }
 
     @Override public void onPause() {
