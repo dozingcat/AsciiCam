@@ -16,14 +16,12 @@ public class NewPictureReceiver extends BroadcastReceiver {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             return;
         }
-        //Log.i(getClass().getName(), "Got picture: " + intent.getData());
+        Log.i(getClass().getName(), "Got picture: " + intent.getData());
         try {
             (new ProcessImageOperation()).processImage(context, intent.getData());
-            //Toast.makeText(context, "Saved ascii image: " + resultDir, Toast.LENGTH_LONG).show();
         }
         catch(Exception ex) {
             Log.e(getClass().getName(), "Error saving picture", ex);
-            //Toast.makeText(context, "Error saving ascii image: " + ex, Toast.LENGTH_LONG).show();
         }
     }
 
