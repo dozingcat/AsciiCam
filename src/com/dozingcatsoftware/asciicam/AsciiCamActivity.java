@@ -16,12 +16,16 @@ import com.dozingcatsoftware.util.ShutterButton;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.hardware.Camera;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -61,6 +65,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
     }
 
     ARManager arManager;
+    boolean hasCameraPermission = false;
     AsciiConverter asciiConverter = new AsciiConverter();
     AsciiConverter.Result asciiResult = new AsciiConverter.Result();
 
@@ -138,11 +143,70 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
     @Override public void onResume() {
         super.onResume();
         appVisible = true;
-        arManager.startCameraIfVisible();
         updateButtonsAndBackground();
         imageProcessor = new AsyncProcessor<CameraPreviewData, Bitmap>();
         imageProcessor.start();
         AndroidUtils.setSystemUiLowProfile(cameraView);
+
+        if (hasCameraPermission()) {
+            arManager.startCameraIfVisible();
+        }
+        else {
+            PermissionsChecker.requestCameraAndStoragePermissions(this);
+        }
+        // If the user needs to grant runtime permissions (in Android M or later), we'll get
+        // notified in onRequestPermissionsResult.
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case PermissionsChecker.CAMERA_AND_STORAGE_REQUEST_CODE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    arManager.startCameraIfVisible();
+                }
+                else {
+                    Toast.makeText(this, getString(R.string.cameraPermissionRequired), Toast.LENGTH_LONG).show();
+                }
+                break;
+            case PermissionsChecker.STORAGE_FOR_PHOTO_REQUEST_CODE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // Don't actually take the picture.
+                }
+                else {
+                    showPermissionNeededDialog(getString(R.string.storagePermissionRequiredToTakePhoto));
+                }
+                break;
+            case PermissionsChecker.STORAGE_FOR_LIBRARY_REQUEST_CODE:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    this.onClick_gotoGallery(galleryButton);
+                }
+                else {
+                    showPermissionNeededDialog(getString(R.string.storagePermissionRequiredToGoToLibrary));
+                }
+                break;
+        }
+    }
+
+    private boolean hasCameraPermission() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                PermissionsChecker.hasCameraPermission(this);
+    }
+
+    private boolean hasStoragePermission() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.M ||
+                PermissionsChecker.hasStoragePermission(this);
+    }
+
+    private void showPermissionNeededDialog(String msg) {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(this).setMessage(msg);
+        dialog.setNeutralButton("OK", new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        dialog.show();
     }
 
     @SuppressLint("RtlHardcoded")
@@ -235,6 +299,10 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
     }
 
     void takePicture() {
+        if (!hasStoragePermission()) {
+            PermissionsChecker.requestStoragePermissionsToTakePhoto(this);
+            return;
+        }
         saveInProgress = true;
         // Use a separate thread to write the PNG and HTML files, so the UI doesn't block.
         (new Thread() {
@@ -299,6 +367,10 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
     }
 
     public void onClick_gotoGallery(View view) {
+        if (!hasStoragePermission()) {
+            PermissionsChecker.requestStoragePermissionsToGoToLibrary(this);
+            return;
+        }
         Intent intent = LibraryActivity.intentWithImageDirectory(this,
                 imageWriter.getBasePictureDirectory(), imageWriter.getThumbnailDirectory());
         startActivity(intent);
