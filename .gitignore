@@ -1,0 +1,67 @@
+# Begin Android Gitignore
+# built application files
+*.apk
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+gen/
+
+# Local configuration file (sdk path, etc)
+local.properties
+# End Android Gitignore
+
+
+# Begin Eclipse Gitignore
+*.pydevproject
+.project
+.metadata
+bin/**
+tmp/**
+tmp/**/*
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+# End Eclipse Gitignore
+
+
+#OS Specific Files
+# Windows thumbnail db
+Thumbs.db
+
+# OSX files
+.DS_Store
+#End OS Specific Files
+
+.externalNativeBuild
+
+
+# Android Studio Files
+.idea
+#.idea/workspace.xml - remove # and delete .idea if it better suit your needs.
+.gradle
+build/
+# End Android Studio Files
