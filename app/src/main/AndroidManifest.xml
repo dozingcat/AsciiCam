@@ -50,7 +50,17 @@
         <service android:name=".NewPictureJob"
                  android:permission="android.permission.BIND_JOB_SERVICE"
                  android:exported="true" />
-        
+
+        <provider
+            android:authorities="com.dozingcatsoftware.asciicam.fileprovider"
+            android:name=".ShareFileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths" />
+        </provider>
+
     </application>
     
 </manifest>

@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.content.FileProvider;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.Window;
@@ -133,9 +134,13 @@ public class ViewImageActivity extends Activity {
     }
 
     private void shareFile(Uri uri, String mimeType, String shareLabel) {
+        File shareFile = new File(uri.getPath());
+        Uri shareContentUri = FileProvider.getUriForFile(this,
+                "com.dozingcatsoftware.asciicam.fileprovider",
+                shareFile);
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.setType(mimeType);
-        shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
+        shareIntent.putExtra(Intent.EXTRA_STREAM, shareContentUri);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(Intent.createChooser(shareIntent, shareLabel));
     }
