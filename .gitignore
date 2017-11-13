@@ -1,0 +1,8 @@
+.idea/
+.gradle/
+app/.externalNativeBuild/
+app/release/
+build/
+gen/
+local.properties
+
