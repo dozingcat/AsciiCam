@@ -1,0 +1,33 @@
+{
+  "buildFiles": [
+    "/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/src/main/jni/Android.mk",
+    "/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/src/main/jni/Application.mk"
+  ],
+  "cleanCommands": [
+    "/Users/brian/programs/android/android-sdk-mac_86/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/src/main/jni/Application.mk APP_ABI\u003dx86_64 NDK_ALL_ABIS\u003dx86_64 NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/build/intermediates/ndkBuild/debug/lib clean"
+  ],
+  "libraries": {
+    "asciiart-debug-x86_64": {
+      "buildCommand": "/Users/brian/programs/android/android-sdk-mac_86/ndk-bundle/ndk-build NDK_PROJECT_PATH\u003dnull APP_BUILD_SCRIPT\u003d/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/src/main/jni/Android.mk NDK_APPLICATION_MK\u003d/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/src/main/jni/Application.mk APP_ABI\u003dx86_64 NDK_ALL_ABIS\u003dx86_64 NDK_DEBUG\u003d1 APP_PLATFORM\u003dandroid-21 NDK_OUT\u003d/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/build/intermediates/ndkBuild/debug/obj NDK_LIBS_OUT\u003d/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/build/intermediates/ndkBuild/debug/lib /Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/build/intermediates/ndkBuild/debug/obj/local/x86_64/libasciiart.so",
+      "toolchain": "toolchain-x86_64",
+      "abi": "x86_64",
+      "artifactName": "asciiart",
+      "files": [
+        {
+          "src": "/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/src/main/jni/asciiart.c",
+          "flags": "\"-gcc-toolchain\" \"/Users/brian/programs/android/android-sdk-mac_86/ndk-bundle/toolchains/x86_64-4.9/prebuilt/darwin-x86_64\" \"-target\" \"x86_64-none-linux-android\" \"-ffunction-sections\" \"-funwind-tables\" \"-fstack-protector-strong\" \"-fPIC\" \"-Wno-invalid-command-line-argument\" \"-Wno-unused-command-line-argument\" \"-no-canonical-prefixes\" \"-g\" \"-O0\" \"-UNDEBUG\" \"-fno-limit-debug-info\" \"-I/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/src/main/jni\" \"-DANDROID\" \"-std\u003dc99\" \"-D__ANDROID_API__\u003d21\" \"-Wa,--noexecstack\" \"-Wformat\" \"-Werror\u003dformat-security\" \"--sysroot\" \"/Users/brian/programs/android/android-sdk-mac_86/ndk-bundle/sysroot\" \"-isystem\" \"/Users/brian/programs/android/android-sdk-mac_86/ndk-bundle/sysroot/usr/include/x86_64-linux-android\""
+        }
+      ],
+      "output": "/Users/brian/programs/AndroidStudioConversion/as/AsciiCam/app/build/intermediates/ndkBuild/debug/obj/local/x86_64/libasciiart.so"
+    }
+  },
+  "toolchains": {
+    "toolchain-x86_64": {
+      "cCompilerExecutable": "/Users/brian/programs/android/android-sdk-mac_86/ndk-bundle/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang"
+    }
+  },
+  "cFileExtensions": [
+    "c"
+  ],
+  "cppFileExtensions": []
+}
