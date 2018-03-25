@@ -19,7 +19,9 @@ public class ImageLibrary {
     }
 
     public List<String> allImagePaths() {
-        List<String> filenames = Arrays.asList((new File(baseDirectory)).list());
+        String[] filenameArray = (new File(baseDirectory)).list();
+        List<String> filenames = filenameArray != null ?
+                Arrays.asList(filenameArray) : Collections.<String>emptyList();
         Collections.sort(filenames);
         Collections.reverse(filenames);
         List<String> paths = new ArrayList<String>();

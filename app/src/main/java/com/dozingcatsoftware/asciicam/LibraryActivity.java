@@ -35,7 +35,6 @@ public class LibraryActivity extends Activity {
     String imageDirectory;
 
     GridView gridView;
-    int selectedGridIndex;
 
     List<Map<String, Uri>> imageMaps = new ArrayList<Map<String, Uri>>();
     static String IMAGE_URI_KEY = "imageUri";
@@ -63,7 +62,6 @@ public class LibraryActivity extends Activity {
         gridView.setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                selectedGridIndex = position;
                 ViewImageActivity.startActivityWithImageURI(LibraryActivity.this,
                         imageMaps.get(position).get(IMAGE_URI_KEY), "image/jpeg");
             }
@@ -104,10 +102,17 @@ public class LibraryActivity extends Activity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode==ViewImageActivity.DELETE_RESULT) {
-            bitmapCache.removeUri(imageMaps.get(selectedGridIndex).get(IMAGE_URI_KEY));
-            imageMaps.remove(selectedGridIndex);
-            displayGrid();
+        if (resultCode == ViewImageActivity.DELETE_RESULT) {
+            String deletedImageUri = data.getStringExtra(ViewImageActivity.DELETED_IMAGE_URI_KEY);
+            for (int i = 0; i < imageMaps.size(); i++) {
+                Uri gridImageUri = imageMaps.get(i).get(IMAGE_URI_KEY);
+                if (gridImageUri.toString().equals(deletedImageUri)) {
+                    bitmapCache.removeUri(gridImageUri);
+                    imageMaps.remove(i);
+                    displayGrid();
+                    break;
+                }
+            }
         }
     }
 
