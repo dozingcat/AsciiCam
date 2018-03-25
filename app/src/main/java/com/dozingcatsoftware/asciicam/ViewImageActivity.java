@@ -30,6 +30,8 @@ public class ViewImageActivity extends Activity {
     }
 
     public static final int DELETE_RESULT = Activity.RESULT_FIRST_USER;
+    // The image URI is set as a string extra in the result Intent if the user deletes the image.
+    public static final String DELETED_IMAGE_URI_KEY = "imageUri";
 
     ImageView imageView;
     Uri imageUri;
@@ -67,9 +69,11 @@ public class ViewImageActivity extends Activity {
     }
 
     public void deleteImage(View view) {
-        String path = this.getIntent().getData().getPath();
+        String path = imageUri.getPath();
         (new File(path)).delete();
-        this.setResult(DELETE_RESULT);
+        Intent intent = new Intent();
+        intent.putExtra(DELETED_IMAGE_URI_KEY, imageUri.toString());
+        this.setResult(DELETE_RESULT, intent);
         this.finish();
     }
 
