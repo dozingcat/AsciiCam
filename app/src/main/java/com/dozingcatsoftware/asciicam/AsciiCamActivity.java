@@ -446,7 +446,7 @@ implements Camera.PreviewCallback, ShutterButton.OnShutterButtonListener {
     }
 
     @Override public void onPreviewFrame(byte[] data, Camera camera) {
-        if (saveInProgress) {
+        if (saveInProgress || imageProcessor == null) {
             CameraUtils.addPreviewCallbackBuffer(camera, data);
             return;
         }
