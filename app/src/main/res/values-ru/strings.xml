@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">AsciiCam</string>
+    <string name="aboutText">AsciiCam 1.2.4\n
+      © 2012-2018 Brian Nenninger\n
+      \n
+      Комментарии и сообщения об ошибках: bnenninyg@gmail.com Исходный код: https://github.com/dozingcat/AsciiCam \n
+      \n
+      Чтобы сделать снимок, коснитесь значка затвора в левом верхнем углу. Меньшие значки под затвором в порядке: - Цвет: циклы между цветовыми режимами черного и белого, только основные цвета и все цвета. - Настройки: позволяет изменять символы, используемые для отображения изображения. Для каждого цветового режима можно использовать разные символы. Существует также возможность автоматического создания ASCII-изображений из снимков, сделанных с помощью стандартного приложения камеры.\n
+      - Галерея: показывает список всех фотографий, которые вы сделали. Нажмите на изображение, чтобы просмотреть его в полноэкранном режиме, где у вас будет возможность удалить его или поделиться им в виде изображения, HTML или текста. - Преобразовать в ASCII: позволяет выбрать существующее изображение на устройстве, которое будет преобразовано в изображение ASCII. (Исходный файл не будет изменен). - Переключатель камеры: переключение между задними и передними камерами. \n
+      \n
+      AsciiCam contains code and images from the Android Open Source Project, used under the terms of the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0.\n
+      \n
+      Color wheel image by Mazenl77 from http://findicons.com/pack/679/nx10, used under the Creative Commons CC-BY license. Convert icon by Oxygen Icons from http://openiconlibrary.sourceforge.net/gallery2/?./Icons/actions/format-font-size-less.png, used under the Creative Commons CC-BY-SA license. Material icons from https://design.google.com/icons/, used under the Creative Commons CC-BY license.</string>
+    <string name="noImagesFound">Вы ещё не сохранили не одной фотографии</string>
+    <string name="errorSavingPicture">Ошибка при сохранении изображения</string>
+
+	<string name="deleteImageButtonLabel">Удалить изображение</string>
+	<string name="shareButtonLabel">Поделиться</string>
+	<string name="exitViewImageButtonLabel">Вернуться</string>
+	
+	<string name="shareDialogTitle">Как вы хотите отправить эту фотографию?</string>
+	<string name="shareImageOptionLabel">Поделиться фотографией</string>
+	<string name="shareHtmlOptionLabel">Поделиться HTML</string>
+	<string name="shareTextOptionLabel">Отправить текст</string>
+	<string name="shareDialogYesLabel">Поделиться</string>
+	<string name="shareDialogNoLabel">Отмена</string>
+			
+	<string name="shareImageTitle">Поделиться фотографией с помощью:</string>
+	<string name="shareHtmlTitle">Поделиться HTML с помощью:</string>
+	<string name="shareTextTitle">Поделиться текстом используя:</string>
+		
+	<string name="galleryButtonLabel">Галерея</string>
+	<string name="aboutButtonLabel">О приложении</string>
+	<string name="preferencesButtonLabel">Настройки</string>
+	
+	<string name="pixelCharsPrefIdPrefix">pixelChars.</string>
+	
+    <string name="whiteOnBlackPixelCharsPrefId">pixelChars.WHITE_ON_BLACK</string>
+    <string name="whiteOnBlackPixelCharsPrefTitle">Черное на белом символы</string>
+    <string name="whiteOnBlackPixelCharsPrefSummary">Сиволы для режима белое на черном</string>
+    <string name="whiteOnBlackPixelCharsPrefMessage">Введите символы для белого на черных изображениях от самого темного к самому яркому или оставьте пустым для .:oO8@</string>
+
+    <string name="blackOnWhitePixelCharsPrefId">pixelChars.BLACK_ON_WHITE</string>
+    <string name="blackOnWhitePixelCharsPrefTitle">Черно-белые символы</string>
+    <string name="blackOnWhitePixelCharsPrefSummary">Символы для черно-белого режима</string>
+    <string name="blackOnWhitePixelCharsPrefMessage">Введите символы для черно-белых изображений от самых темных до самых ярких или оставьте пустым для #o:..</string>
+
+    <string name="ansiColorPixelCharsPrefId">pixelChars.ANSI_COLOR</string>
+    <string name="ansiColorPixelCharsPrefTitle">Цвет ANSI символов</string>
+    <string name="ansiColorPixelCharsPrefSummary">Символы для ANSI цветов</string>
+    <string name="ansiColorPixelCharsPrefMessage">Введите символы для использования в изображениях от самых темных до самых ярких или оставьте пустым для .:oO8@</string>
+
+    <string name="fullColorPixelCharsPrefId">pixelChars.FULL_COLOR</string>
+    <string name="fullColorPixelCharsPrefTitle">Символы для всех цветов</string>
+    <string name="fullColorPixelCharsPrefSummary">Символы для режима со всеми цветами</string>
+    <string name="fullColorPixelCharsPrefMessage">Введите символы для использования в изображениях от самых темных до самых ярких. Полноцветный режим обычно лучше всего работает с меньшим количеством или даже одним символом. Оставьте пустым для O8@</string>
+
+    <string name="autoConvertPicturesPrefId">autoConvertPictures</string>
+    <string name="autoConvertPicturesPrefTitle">Автомотически конвертировать изображения с камеры</string>
+
+    <string name="controlsOnLeftPrefId">controlsOnLeft</string>
+    <string name="controlsOnLeftPrefTitle">Управление слева</string>
+    
+    <string name="cameraPermissionRequired">AsciiCam не может работать, без доступа к камере</string>
+    <string name="storagePermissionRequiredToTakePhoto">AsciiCam нужно разрешения, для сохранения фотографий</string>
+    <string name="storagePermissionRequiredToGoToLibrary">AsciiCam необходимо разрешение на доступ к хранилищу для того, чтобы покозать ваши фотографии.</string>
+</resources>
