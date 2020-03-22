@@ -2,7 +2,6 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "26.0.2"
 
     defaultConfig {
         applicationId "com.dozingcatsoftware.asciicam"
@@ -28,5 +27,5 @@ android {
 }
 
 dependencies {
-    compile 'com.android.support:support-v4:24.2.1'
+    implementation 'com.android.support:support-v4:24.2.1'
 }
