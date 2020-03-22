@@ -3,6 +3,14 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 24
 
+    // Disable warning that SDK version is below Google Play requirements.
+    // Increasing the SDK version would require updating the support library,
+    // which would require increasing the min SDK version, which I don't want
+    // to do for the F-Droid release.
+    lintOptions {
+        checkReleaseBuilds false
+    }
+
     defaultConfig {
         applicationId "com.dozingcatsoftware.asciicam"
         minSdkVersion 9
