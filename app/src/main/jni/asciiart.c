@@ -10,6 +10,10 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesBWNative(J
 
     jbyte *data = (*env)->GetByteArrayElements(env, jdata, 0);
     jint *asciiOutput = (*env)->GetIntArrayElements(env, jasciiOutput, 0);
+
+    int dataSizeMax = (imageWidth * imageHeight * (endRow+1) / asciiRows) +
+    (imageWidth * (asciiCols+1) / asciiCols);
+    if (sizeof(data) < dataSizeMax) return;
     
     int asciiIndex = startRow * asciiCols;
     for(int r=startRow; r<endRow; r++) {
@@ -47,7 +51,11 @@ void Java_com_dozingcatsoftware_asciicam_AsciiConverter_getAsciiValuesWithColorN
     jbyte *data = (*env)->GetByteArrayElements(env, jdata, 0);
     jint *asciiOutput = (*env)->GetIntArrayElements(env, jasciiOutput, 0);
     jint *colorOutput = (*env)->GetIntArrayElements(env, jcolorOutput, 0);
-    
+
+    int dataSizeMax = (imageWidth * imageHeight * (endRow+1) / asciiRows) +
+    (imageWidth * (asciiCols+1) / asciiCols);
+    if (sizeof(data) < dataSizeMax) return;
+
     static int MAX_COLOR_VAL = 262143; // 2**18-1
     static float ANSI_COLOR_RATIO = 7.0f/8;
     int asciiIndex = startRow * asciiCols;
@@ -139,18 +147,23 @@ void Java_com_dozingcatsoftware_asciicam_AsciiRenderer_fillPixelsInRowNative(
 
 	int offset = 0;
 	int pixelsPerRow = numValues * charWidth;
+
+	if (sizeof(asciiValues) < numChars) return;
 	// For each row of pixels:
 	for (int y=0; y<charHeight; y++) {
 		// For each character to draw:
 		for (int charPosition=0; charPosition<numChars; charPosition++) {
 			jint charValue = asciiValues[charPosition];
 			jint charColor = colorValues[charPosition];
+
+			if (sizeof(charsBitmap) < charHeight*pixelsPerRow + charValue*charWidth) return;
 			// Index into the chars bitmap, going "down" the number of rows,
 			// and "across" the amount of character widths given by the index.
 			int charBitmapOffset = y*pixelsPerRow + charValue*charWidth;
 			// And now just copy charWidth pixels to the output, using the
 			// specified color if the brightness is >0, otherwise black.
 			for (int i=0; i<charWidth; i++) {
+				if (sizeof(rowPixels) < offset) return;
 				jbyte bitmapValue = charsBitmap[charBitmapOffset++];
 				rowPixels[offset++] = (bitmapValue) ? charColor : backgroundColor;
 			}
